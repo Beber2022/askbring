@@ -6,6 +6,10 @@ import ClientMissions from './pages/ClientMissions';
 import IntervenantDashboard from './pages/IntervenantDashboard';
 import AvailableMissions from './pages/AvailableMissions';
 import IntervenantMissions from './pages/IntervenantMissions';
+import MissionDetails from './pages/MissionDetails';
+import TrackMission from './pages/TrackMission';
+import Messages from './pages/Messages';
+import RateMission from './pages/RateMission';
 import __Layout from './Layout.jsx';
 
 
@@ -18,6 +22,10 @@ export const PAGES = {
     "IntervenantDashboard": IntervenantDashboard,
     "AvailableMissions": AvailableMissions,
     "IntervenantMissions": IntervenantMissions,
+    "MissionDetails": MissionDetails,
+    "TrackMission": TrackMission,
+    "Messages": Messages,
+    "RateMission": RateMission,
 }
 
 export const pagesConfig = {
