@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
+import { useLiveLocationTracking } from '@/components/mission/LiveLocationTracker';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -70,19 +71,46 @@ export default function TrackMission() {
   const [mission, setMission] = useState(null);
   const [intervenantLocation, setIntervenantLocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [lastLocationUpdate, setLastLocationUpdate] = useState(null);
 
   useEffect(() => {
     loadData();
-    // Poll for updates every 10 seconds
-    const interval = setInterval(loadData, 10000);
+    // Poll for location updates every 10 seconds
+    const interval = setInterval(() => {
+      const params = new URLSearchParams(window.location.search);
+      const missionId = params.get('id');
+      
+      if (mission?.intervenant_email) {
+        base44.entities.IntervenantLocation.filter({
+          user_email: mission.intervenant_email
+        }).then(locations => {
+          if (locations.length > 0) {
+            setIntervenantLocation(locations[0]);
+            setLastLocationUpdate(new Date());
+          }
+        }).catch(err => console.error('Error updating location:', err));
+      }
+    }, 10000);
+    
     return () => clearInterval(interval);
-  }, []);
+  }, [mission?.intervenant_email]);
+
+  // Track intervenant location if they are viewing their own mission
+  const isIntervenant = user?.email === mission?.intervenant_email;
+  const activeMissionId = isIntervenant && ['in_progress', 'shopping', 'delivering'].includes(mission?.status)
+    ? mission?.id
+    : null;
+  useLiveLocationTracking(user, activeMissionId);
 
   const loadData = async () => {
     const params = new URLSearchParams(window.location.search);
     const missionId = params.get('id');
 
     try {
+      const userData = await base44.auth.me();
+      setUser(userData);
+
       const missions = await base44.entities.Mission.filter({ id: missionId });
       if (missions.length > 0) {
         setMission(missions[0]);
@@ -94,6 +122,7 @@ export default function TrackMission() {
           });
           if (locations.length > 0) {
             setIntervenantLocation(locations[0]);
+            setLastLocationUpdate(new Date());
           }
         }
       }
@@ -206,9 +235,14 @@ export default function TrackMission() {
 
         {/* Live indicator */}
         <div className="absolute top-4 right-4 z-[1000]">
-          <Badge className="bg-red-500 text-white animate-pulse">
-            <span className="w-2 h-2 bg-white rounded-full mr-2 animate-ping" />
+          <Badge className="bg-emerald-500 text-white shadow-lg flex items-center gap-2">
+            <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
             EN DIRECT
+            {lastLocationUpdate && (
+              <span className="text-xs opacity-90">
+                • {Math.floor((new Date() - lastLocationUpdate) / 1000)}s
+              </span>
+            )}
           </Badge>
         </div>
       </div>

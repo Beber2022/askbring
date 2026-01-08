@@ -23,6 +23,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
+import MissionMap from '@/components/mission/MissionMap';
+import { useLiveLocationTracking } from '@/components/mission/LiveLocationTracker';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -94,6 +96,12 @@ export default function MissionDetails() {
   const isIntervenant = user?.email === mission?.intervenant_email;
   const isClient = user?.email === mission?.client_email;
 
+  // Track intervenant location in real-time if active mission
+  const activeMissionId = isIntervenant && ['in_progress', 'shopping', 'delivering'].includes(mission?.status) 
+    ? mission?.id 
+    : null;
+  useLiveLocationTracking(user, activeMissionId);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -138,6 +146,13 @@ export default function MissionDetails() {
           </div>
           <Badge className={status.color}>{status.label}</Badge>
         </div>
+
+        {/* Live Map for active missions */}
+        {['in_progress', 'shopping', 'delivering'].includes(mission.status) && mission.intervenant_name && (
+          <div className="mb-6">
+            <MissionMap mission={mission} height="350px" />
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}

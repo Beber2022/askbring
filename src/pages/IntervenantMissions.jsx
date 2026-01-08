@@ -83,6 +83,12 @@ export default function IntervenantMissions() {
     ['completed', 'cancelled'].includes(m.status)
   );
 
+  // Track location for first active mission
+  const firstActiveMission = activeMissions.find(m => 
+    ['in_progress', 'shopping', 'delivering'].includes(m.status)
+  );
+  useLiveLocationTracking(user, firstActiveMission?.id);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
