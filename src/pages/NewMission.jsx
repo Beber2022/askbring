@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 import ShoppingListEditor from '@/components/mission/ShoppingListEditor';
 import StoreSelector from '@/components/mission/StoreSelector';
 
@@ -35,6 +36,7 @@ const steps = [
 export default function NewMission() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { permission, requestPermission } = useNotifications();
   const [currentStep, setCurrentStep] = useState(1);
   const [user, setUser] = useState(null);
   const [storeCards, setStoreCards] = useState([]);
@@ -65,6 +67,13 @@ export default function NewMission() {
 
         const cards = await base44.entities.StoreCard.filter({ user_email: userData.email });
         setStoreCards(cards);
+
+        // Request notification permission on first mission
+        if (permission !== 'granted' && permission !== 'denied') {
+          setTimeout(() => {
+            requestPermission();
+          }, 2000);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {

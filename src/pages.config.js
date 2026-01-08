@@ -10,6 +10,7 @@ import MissionDetails from './pages/MissionDetails';
 import TrackMission from './pages/TrackMission';
 import Messages from './pages/Messages';
 import RateMission from './pages/RateMission';
+import Notifications from './pages/Notifications';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "TrackMission": TrackMission,
     "Messages": Messages,
     "RateMission": RateMission,
+    "Notifications": Notifications,
 }
 
 export const pagesConfig = {

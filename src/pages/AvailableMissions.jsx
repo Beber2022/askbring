@@ -18,12 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 import moment from 'moment';
 import 'moment/locale/fr';
 
 moment.locale('fr');
 
 export default function AvailableMissions() {
+  const { showNotification } = useNotifications();
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,6 +84,12 @@ export default function AvailableMissions() {
       toast({
         title: "Mission acceptée !",
         description: "Vous pouvez maintenant commencer les courses"
+      });
+
+      // Notify client
+      showNotification('Mission acceptée', {
+        body: `Vous avez accepté la mission au ${mission.store_name}`,
+        type: 'acceptance'
       });
 
       // Remove from list

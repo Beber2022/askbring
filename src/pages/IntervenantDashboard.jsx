@@ -20,12 +20,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 import moment from 'moment';
 import 'moment/locale/fr';
 
 moment.locale('fr');
 
 export default function IntervenantDashboard() {
+  const { permission, requestPermission } = useNotifications();
   const [user, setUser] = useState(null);
   const [missions, setMissions] = useState([]);
   const [isAvailable, setIsAvailable] = useState(true);
@@ -45,6 +47,13 @@ export default function IntervenantDashboard() {
         },
         (error) => console.log('Geolocation error:', error)
       );
+    }
+
+    // Request notification permission on first load
+    if (permission !== 'granted' && permission !== 'denied') {
+      setTimeout(() => {
+        requestPermission();
+      }, 2000);
     }
   }, []);
 
@@ -150,6 +159,37 @@ export default function IntervenantDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
+        {/* Notification Banner */}
+        {permission === 'default' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <Card className="border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <Bell className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">Activez les notifications</h4>
+                      <p className="text-sm text-gray-600">Ne manquez aucune nouvelle mission près de vous</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={requestPermission}
+                    className="bg-emerald-500 hover:bg-emerald-600 flex-shrink-0"
+                  >
+                    Activer
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>

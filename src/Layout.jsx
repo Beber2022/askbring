@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import NotificationProvider from '@/components/notifications/NotificationProvider';
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -52,12 +53,14 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Nouvelle Mission', page: 'NewMission', icon: ShoppingCart },
     { name: 'Mes Missions', page: 'ClientMissions', icon: Briefcase },
     { name: 'Mes Cartes', page: 'StoreCards', icon: CreditCard },
+    { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
 
   const intervenantNav = [
     { name: 'Dashboard', page: 'IntervenantDashboard', icon: Home },
     { name: 'Missions Disponibles', page: 'AvailableMissions', icon: MapPin },
     { name: 'Mes Missions', page: 'IntervenantMissions', icon: Briefcase },
+    { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
 
   const navigation = user?.user_type === 'intervenant' ? intervenantNav : clientNav;
@@ -74,17 +77,18 @@ export default function Layout({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-      <style>{`
-        :root {
-          --primary: 160 84% 39%;
-          --primary-foreground: 0 0% 100%;
-        }
-        .nav-link-active {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: white;
-        }
-      `}</style>
+    <NotificationProvider>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+        <style>{`
+          :root {
+            --primary: 160 84% 39%;
+            --primary-foreground: 0 0% 100%;
+          }
+          .nav-link-active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+          }
+        `}</style>
       
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100">
@@ -124,12 +128,11 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-3">
               {isAuthenticated && user ? (
                 <>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="w-5 h-5 text-gray-600" />
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center">
-                      3
-                    </span>
-                  </Button>
+                  <Link to={createPageUrl('Notifications')}>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Bell className="w-5 h-5 text-gray-600" />
+                    </Button>
+                  </Link>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -252,6 +255,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </NotificationProvider>
   );
 }

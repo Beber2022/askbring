@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
+import NotificationSettings from '@/components/notifications/NotificationSettings';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -114,7 +115,7 @@ export default function Profile() {
       >
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Mon Profil</h1>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 mb-6">
           {/* Profile Card */}
           <Card className="md:col-span-1 border-0 shadow-lg">
             <CardContent className="p-6 text-center">
@@ -300,6 +301,9 @@ export default function Profile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Notification Settings */}
+        <NotificationSettings />
       </motion.div>
     </div>
   );
