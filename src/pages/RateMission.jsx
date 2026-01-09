@@ -63,6 +63,17 @@ export default function RateMission() {
         tip: parseFloat(tip) || 0
       });
 
+      // Award loyalty points to client
+      const user = await base44.auth.me();
+      const totalAmount = (mission.actual_cost || mission.estimated_budget || 0) + (mission.service_fee || 0);
+      const pointsEarned = Math.floor(totalAmount) + 10; // 1 point per euro + 10 bonus per mission
+      
+      await base44.auth.updateMe({
+        loyalty_points: (user.loyalty_points || 0) + pointsEarned,
+        total_points_earned: (user.total_points_earned || 0) + pointsEarned,
+        missions_completed: (user.missions_completed || 0) + 1
+      });
+
       // Update intervenant stats
       if (mission.intervenant_email) {
         const users = await base44.entities.User.filter({ email: mission.intervenant_email });
@@ -80,7 +91,10 @@ export default function RateMission() {
         }
       }
 
-      toast({ title: "Merci pour votre évaluation !" });
+      toast({ 
+        title: "Merci pour votre évaluation !",
+        description: `+${pointsEarned} points de fidélité gagnés ! 🎉`
+      });
       navigate(createPageUrl('ClientMissions'));
     } catch (error) {
       toast({ title: "Erreur", description: "Impossible d'envoyer l'évaluation", variant: "destructive" });
