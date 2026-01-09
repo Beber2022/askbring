@@ -68,18 +68,15 @@ export default function Layout({ children, currentPageName }) {
   const publicPages = ['Home', 'Login'];
   const isPublicPage = publicPages.includes(currentPageName);
 
-  if (!isAuthenticated && !isPublicPage) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-        {children}
-      </div>
-    );
-  }
-
   return (
     <NotificationProvider>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-        <style>{`
+      {!isAuthenticated && !isPublicPage ? (
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+          {children}
+        </div>
+      ) : (
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+          <style>{`
           :root {
             --primary: 160 84% 39%;
             --primary-foreground: 0 0% 100%;
@@ -255,7 +252,8 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </div>
       </footer>
-      </div>
+        </div>
+      )}
     </NotificationProvider>
   );
 }
