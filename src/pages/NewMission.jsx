@@ -52,8 +52,10 @@ export default function NewMission() {
     notes: '',
     estimated_budget: 0,
     store_card_id: '',
-    scheduled_time: ''
+    scheduled_time: '',
+    loyalty_discount: 0
   });
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -114,6 +116,8 @@ export default function NewMission() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      const finalServiceFee = Math.max(0, calculateServiceFee() - (formData.loyalty_discount || 0));
+      
       const missionData = {
         client_email: user.email,
         client_name: user.full_name,
@@ -123,17 +127,25 @@ export default function NewMission() {
         delivery_address: formData.delivery_address,
         notes: formData.notes,
         estimated_budget: formData.estimated_budget,
-        service_fee: calculateServiceFee(),
+        service_fee: finalServiceFee,
         store_card_id: formData.store_card_id || null,
         scheduled_time: formData.scheduled_time || null,
         status: 'pending'
       };
 
       await base44.entities.Mission.create(missionData);
+
+      // Deduct loyalty points if used
+      if (formData.loyalty_discount > 0) {
+        const pointsUsed = formData.loyalty_discount === 5 ? 100 : formData.loyalty_discount === 10 ? 200 : 300;
+        await base44.auth.updateMe({
+          loyalty_points: loyaltyPoints - pointsUsed
+        });
+      }
       
       toast({
         title: "Mission créée !",
-        description: "Votre demande a été envoyée aux intervenants disponibles"
+        description: formData.loyalty_discount > 0 ? `Réduction de ${formData.loyalty_discount}€ appliquée !` : "Votre demande a été envoyée aux intervenants disponibles"
       });
 
       navigate(createPageUrl('ClientMissions'));
@@ -356,8 +368,56 @@ export default function NewMission() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="p-4 bg-gray-50 rounded-xl">
+                 {/* Loyalty Discount Option */}
+                 {loyaltyPoints >= 100 && (
+                   <div className="p-4 border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl">
+                     <div className="flex items-center gap-3 mb-3">
+                       <Star className="w-5 h-5 text-emerald-600" />
+                       <div>
+                         <h4 className="font-semibold text-gray-900">Points de fidélité</h4>
+                         <p className="text-sm text-gray-600">Vous avez {loyaltyPoints} points</p>
+                       </div>
+                     </div>
+                     <div className="flex flex-wrap gap-2">
+                       {loyaltyPoints >= 100 && (
+                         <Button
+                           type="button"
+                           variant={formData.loyalty_discount === 5 ? "default" : "outline"}
+                           size="sm"
+                           onClick={() => setFormData({...formData, loyalty_discount: formData.loyalty_discount === 5 ? 0 : 5})}
+                           className={formData.loyalty_discount === 5 ? "bg-emerald-500" : ""}
+                         >
+                           -5€ (100 pts)
+                         </Button>
+                       )}
+                       {loyaltyPoints >= 200 && (
+                         <Button
+                           type="button"
+                           variant={formData.loyalty_discount === 10 ? "default" : "outline"}
+                           size="sm"
+                           onClick={() => setFormData({...formData, loyalty_discount: formData.loyalty_discount === 10 ? 0 : 10})}
+                           className={formData.loyalty_discount === 10 ? "bg-emerald-500" : ""}
+                         >
+                           -10€ (200 pts)
+                         </Button>
+                       )}
+                       {loyaltyPoints >= 300 && (
+                         <Button
+                           type="button"
+                           variant={formData.loyalty_discount === 15 ? "default" : "outline"}
+                           size="sm"
+                           onClick={() => setFormData({...formData, loyalty_discount: formData.loyalty_discount === 15 ? 0 : 15})}
+                           className={formData.loyalty_discount === 15 ? "bg-emerald-500" : ""}
+                         >
+                           Gratuit (300 pts)
+                         </Button>
+                       )}
+                     </div>
+                   </div>
+                 )}
+
+                 <div className="space-y-4">
+                   <div className="p-4 bg-gray-50 rounded-xl">
                       <p className="text-sm text-gray-500 mb-1">Magasin</p>
                       <p className="font-medium text-gray-900">{formData.store_name}</p>
                       {formData.store_address && (
@@ -391,10 +451,16 @@ export default function NewMission() {
                         <span className="text-gray-600">Frais de service</span>
                         <span className="font-medium">{calculateServiceFee().toFixed(2)}€</span>
                       </div>
+                      {formData.loyalty_discount > 0 && (
+                        <div className="flex justify-between items-center mb-2 text-emerald-700">
+                          <span>Réduction fidélité</span>
+                          <span className="font-medium">-{formData.loyalty_discount.toFixed(2)}€</span>
+                        </div>
+                      )}
                       <div className="flex justify-between items-center pt-2 border-t border-emerald-200">
                         <span className="font-semibold text-gray-900">Total estimé</span>
                         <span className="font-bold text-emerald-600 text-lg">
-                          {(formData.estimated_budget + calculateServiceFee()).toFixed(2)}€
+                          {(formData.estimated_budget + Math.max(0, calculateServiceFee() - (formData.loyalty_discount || 0))).toFixed(2)}€
                         </span>
                       </div>
                     </div>
