@@ -25,6 +25,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import ShoppingListEditor from '@/components/mission/ShoppingListEditor';
 import StoreSelector from '@/components/mission/StoreSelector';
+import { Star } from 'lucide-react';
 
 const steps = [
   { id: 1, title: 'Magasin', icon: Store },
@@ -60,6 +61,7 @@ export default function NewMission() {
       try {
         const userData = await base44.auth.me();
         setUser(userData);
+        setLoyaltyPoints(userData.loyalty_points || 0);
         setFormData(prev => ({
           ...prev,
           delivery_address: userData.address || ''

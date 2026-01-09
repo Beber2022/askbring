@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TrackMission from './pages/TrackMission';
+import LoyaltyPoints from './pages/LoyaltyPoints';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "RateMission": RateMission,
     "StoreCards": StoreCards,
     "TrackMission": TrackMission,
+    "LoyaltyPoints": LoyaltyPoints,
 }
 
 export const pagesConfig = {

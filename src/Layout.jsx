@@ -13,7 +13,8 @@ import {
   Bell,
   MessageSquare,
   LogOut,
-  Briefcase
+  Briefcase,
+  Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Nouvelle Mission', page: 'NewMission', icon: ShoppingCart },
     { name: 'Mes Missions', page: 'ClientMissions', icon: Briefcase },
     { name: 'Mes Cartes', page: 'StoreCards', icon: CreditCard },
+    { name: 'Fidélité', page: 'LoyaltyPoints', icon: Star },
     { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
 
