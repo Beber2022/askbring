@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import MissionMap from '@/components/mission/MissionMap';
+import ChatBox from '@/components/mission/ChatBox';
 import { useLiveLocationTracking } from '@/components/mission/LiveLocationTracker';
 import moment from 'moment';
 import 'moment/locale/fr';
@@ -374,6 +375,13 @@ export default function MissionDetails() {
                   Suivre en temps réel
                 </Button>
               </Link>
+            )}
+
+            {/* Chat box for missions with intervenant */}
+            {mission.intervenant_name && ['accepted', 'in_progress', 'shopping', 'delivering'].includes(mission.status) && (
+              <div className="lg:col-span-1">
+                <ChatBox mission={mission} user={user} />
+              </div>
             )}
           </div>
         </div>

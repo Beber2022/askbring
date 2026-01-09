@@ -12,6 +12,7 @@ import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TrackMission from './pages/TrackMission';
 import LoyaltyPoints from './pages/LoyaltyPoints';
+import FAQ from './pages/FAQ';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "StoreCards": StoreCards,
     "TrackMission": TrackMission,
     "LoyaltyPoints": LoyaltyPoints,
+    "FAQ": FAQ,
 }
 
 export const pagesConfig = {

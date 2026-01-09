@@ -41,8 +41,10 @@ export default function NewMission() {
   const [currentStep, setCurrentStep] = useState(1);
   const [user, setUser] = useState(null);
   const [storeCards, setStoreCards] = useState([]);
+  const [savedAddresses, setSavedAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showNewAddress, setShowNewAddress] = useState(false);
 
   const [formData, setFormData] = useState({
     store_name: '',
@@ -71,6 +73,15 @@ export default function NewMission() {
 
         const cards = await base44.entities.StoreCard.filter({ user_email: userData.email });
         setStoreCards(cards);
+
+        const addresses = await base44.entities.SavedAddress.filter({ user_email: userData.email });
+        setSavedAddresses(addresses);
+        
+        // Use default address if exists
+        const defaultAddr = addresses.find(a => a.is_default);
+        if (defaultAddr && !formData.delivery_address) {
+          setFormData(prev => ({ ...prev, delivery_address: defaultAddr.address }));
+        }
 
         // Request notification permission on first mission
         if (permission !== 'granted' && permission !== 'denied') {
@@ -294,12 +305,43 @@ export default function NewMission() {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label>Adresse de livraison *</Label>
-                    <Textarea
-                      value={formData.delivery_address}
-                      onChange={(e) => setFormData({ ...formData, delivery_address: e.target.value })}
-                      placeholder="Votre adresse complète..."
-                      className="min-h-[80px]"
-                    />
+                    
+                    {savedAddresses.length > 0 && !showNewAddress && (
+                      <div className="space-y-2">
+                        <Select
+                          value={formData.delivery_address}
+                          onValueChange={(value) => {
+                            if (value === 'new') {
+                              setShowNewAddress(true);
+                              setFormData({ ...formData, delivery_address: '' });
+                            } else {
+                              setFormData({ ...formData, delivery_address: value });
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner une adresse" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {savedAddresses.map((addr) => (
+                              <SelectItem key={addr.id} value={addr.address}>
+                                {addr.label} - {addr.address.substring(0, 50)}...
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="new">+ Nouvelle adresse</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    
+                    {(savedAddresses.length === 0 || showNewAddress) && (
+                      <Textarea
+                        value={formData.delivery_address}
+                        onChange={(e) => setFormData({ ...formData, delivery_address: e.target.value })}
+                        placeholder="Votre adresse complète..."
+                        className="min-h-[80px]"
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-2">

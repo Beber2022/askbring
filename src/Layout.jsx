@@ -14,7 +14,8 @@ import {
   MessageSquare,
   LogOut,
   Briefcase,
-  Star
+  Star,
+  HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -248,9 +249,15 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <span className="font-semibold text-gray-700">AskBring</span>
             </div>
-            <p className="text-sm text-gray-500">
-              © 2024 AskBring. Tous droits réservés.
-            </p>
+            <div className="flex items-center gap-4">
+              <Link to={createPageUrl('FAQ')} className="text-sm text-gray-600 hover:text-emerald-600 flex items-center gap-1">
+                <HelpCircle className="w-4 h-4" />
+                Aide & FAQ
+              </Link>
+              <span className="text-sm text-gray-500">
+                © 2024 AskBring. Tous droits réservés.
+              </span>
+            </div>
           </div>
         </div>
       </footer>
