@@ -27,6 +27,7 @@ import { useNotifications } from '@/components/notifications/NotificationProvide
 import DailySchedule from '@/components/intervenant/DailySchedule';
 import WorkingHoursManager from '@/components/intervenant/WorkingHoursManager';
 import IntervenantMapDashboard from '@/components/intervenant/IntervenantMapDashboard';
+import AdvancedRouteOptimizer from '@/components/intervenant/AdvancedRouteOptimizer';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -331,9 +332,12 @@ export default function IntervenantDashboard() {
           </Card>
         </div>
 
-        {/* Map Dashboard */}
-        <div className="mb-8">
+        {/* Map Dashboard and Route Optimization */}
+        <div className="mb-8 space-y-6">
           <IntervenantMapDashboard user={user} missions={activeMissions} />
+          {activeMissions.length > 1 && location && (
+            <AdvancedRouteOptimizer missions={activeMissions} userLocation={location} />
+          )}
         </div>
 
         {/* Daily Schedule and Route Optimization */}
