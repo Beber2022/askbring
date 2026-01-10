@@ -19,6 +19,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
+import MissionFilters from '@/components/mission/MissionFilters';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -27,10 +28,12 @@ moment.locale('fr');
 export default function AvailableMissions() {
   const { showNotification } = useNotifications();
   const [missions, setMissions] = useState([]);
+  const [filteredMissions, setFilteredMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState(null);
   const [location, setLocation] = useState(null);
+  const [filters, setFilters] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,11 +63,58 @@ export default function AvailableMissions() {
         '-created_date'
       );
       setMissions(pendingMissions);
+      setFilteredMissions(pendingMissions);
     } catch (error) {
       console.error('Error loading missions:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = (newFilters) => {
+    setFilters(newFilters);
+    
+    let filtered = [...missions];
+
+    // Filter by location radius
+    if (location && newFilters.searchRadius) {
+      filtered = filtered.filter(mission => {
+        if (!mission.delivery_lat || !mission.delivery_lng) return true;
+        const distance = calculateDistance(
+          location.latitude,
+          location.longitude,
+          mission.delivery_lat,
+          mission.delivery_lng
+        );
+        return distance <= newFilters.searchRadius;
+      });
+    }
+
+    // Filter by budget
+    if (newFilters.minBudget || newFilters.maxBudget) {
+      filtered = filtered.filter(mission => {
+        const budget = mission.estimated_budget || 0;
+        return budget >= newFilters.minBudget && budget <= newFilters.maxBudget;
+      });
+    }
+
+    // Filter by store type
+    if (newFilters.storeType && newFilters.storeType !== 'all') {
+      filtered = filtered.filter(mission => 
+        mission.store_name?.toLowerCase().includes(newFilters.storeType.toLowerCase())
+      );
+    }
+
+    // Filter by scheduled time
+    if (newFilters.scheduledTime && newFilters.scheduledTime !== 'all') {
+      if (newFilters.scheduledTime === 'asap') {
+        filtered = filtered.filter(mission => !mission.scheduled_time || mission.scheduled_time === null);
+      } else {
+        filtered = filtered.filter(mission => mission.scheduled_time === newFilters.scheduledTime);
+      }
+    }
+
+    setFilteredMissions(filtered);
   };
 
   const handleRefresh = async () => {
@@ -132,7 +182,9 @@ export default function AvailableMissions() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Missions Disponibles</h1>
-            <p className="text-gray-600 mt-1">{missions.length} mission(s) près de vous</p>
+            <p className="text-gray-600 mt-1">
+              {filteredMissions.length} mission(s) {filters ? 'trouvée(s)' : 'près de vous'}
+            </p>
           </div>
           <Button
             variant="outline"
@@ -145,15 +197,20 @@ export default function AvailableMissions() {
           </Button>
         </div>
 
-        {missions.length === 0 ? (
+        {/* Filters */}
+        <MissionFilters onFilterChange={applyFilters} userLocation={location} />
+
+        {filteredMissions.length === 0 ? (
           <Card className="border-0 shadow-lg">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                 <MapPin className="w-10 h-10 text-emerald-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucune mission disponible</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {filters ? 'Aucune mission trouvée' : 'Aucune mission disponible'}
+              </h3>
               <p className="text-gray-500 text-center mb-6">
-                Revenez plus tard ou activez les notifications
+                {filters ? 'Essayez de modifier vos filtres' : 'Revenez plus tard ou activez les notifications'}
               </p>
               <Button onClick={handleRefresh} variant="outline">
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -164,7 +221,7 @@ export default function AvailableMissions() {
         ) : (
           <div className="space-y-4">
             <AnimatePresence>
-              {missions.map((mission, index) => {
+              {filteredMissions.map((mission, index) => {
                 const distance = location ? 
                   calculateDistance(
                     location.latitude, 
