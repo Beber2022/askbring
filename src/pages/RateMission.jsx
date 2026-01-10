@@ -8,7 +8,12 @@ import {
   ArrowLeft,
   Send,
   CheckCircle,
-  Gift
+  Gift,
+  Heart,
+  Ban,
+  Clock,
+  Smile,
+  Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function RateMission() {
@@ -28,6 +34,12 @@ export default function RateMission() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [review, setReview] = useState('');
   const [tip, setTip] = useState(0);
+  const [ratingPunctuality, setRatingPunctuality] = useState(0);
+  const [ratingCourtesy, setRatingCourtesy] = useState(0);
+  const [ratingQuality, setRatingQuality] = useState(0);
+  const [addToFavorites, setAddToFavorites] = useState(false);
+  const [blockIntervenant, setBlockIntervenant] = useState(false);
+  const [blockReason, setBlockReason] = useState('');
 
   useEffect(() => {
     loadData();
@@ -60,7 +72,10 @@ export default function RateMission() {
       await base44.entities.Mission.update(mission.id, {
         rating,
         review,
-        tip: parseFloat(tip) || 0
+        tip: parseFloat(tip) || 0,
+        rating_punctuality: ratingPunctuality,
+        rating_courtesy: ratingCourtesy,
+        rating_quality: ratingQuality
       });
 
       // Award loyalty points to client
@@ -73,6 +88,41 @@ export default function RateMission() {
         total_points_earned: (user.total_points_earned || 0) + pointsEarned,
         missions_completed: (user.missions_completed || 0) + 1
       });
+
+      // Handle favorites/block
+      if (mission.intervenant_email) {
+        const user = await base44.auth.me();
+        
+        // Check if preference already exists
+        const existingPrefs = await base44.entities.IntervenantPreference.filter({
+          client_email: user.email,
+          intervenant_email: mission.intervenant_email
+        });
+
+        if (addToFavorites && existingPrefs.length === 0) {
+          await base44.entities.IntervenantPreference.create({
+            client_email: user.email,
+            intervenant_email: mission.intervenant_email,
+            intervenant_name: mission.intervenant_name,
+            preference_type: 'favorite'
+          });
+        } else if (blockIntervenant) {
+          // Remove from favorites if exists
+          if (existingPrefs.length > 0) {
+            for (const pref of existingPrefs) {
+              await base44.entities.IntervenantPreference.delete(pref.id);
+            }
+          }
+          // Add to blocked
+          await base44.entities.IntervenantPreference.create({
+            client_email: user.email,
+            intervenant_email: mission.intervenant_email,
+            intervenant_name: mission.intervenant_name,
+            preference_type: 'blocked',
+            reason: blockReason
+          });
+        }
+      }
 
       // Update intervenant stats
       if (mission.intervenant_email) {
@@ -196,6 +246,89 @@ export default function RateMission() {
           </CardContent>
         </Card>
 
+        {/* Detailed Ratings */}
+        <Card className="border-0 shadow-lg mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Évaluation détaillée</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Punctuality */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-5 h-5 text-emerald-600" />
+                <Label>Ponctualité</Label>
+              </div>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setRatingPunctuality(star)}
+                    className="focus:outline-none"
+                  >
+                    <Star
+                      className={`w-8 h-8 transition-colors ${
+                        star <= ratingPunctuality
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Courtesy */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Smile className="w-5 h-5 text-emerald-600" />
+                <Label>Courtoisie</Label>
+              </div>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setRatingCourtesy(star)}
+                    className="focus:outline-none"
+                  >
+                    <Star
+                      className={`w-8 h-8 transition-colors ${
+                        star <= ratingCourtesy
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quality */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Award className="w-5 h-5 text-emerald-600" />
+                <Label>Qualité du travail</Label>
+              </div>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setRatingQuality(star)}
+                    className="focus:outline-none"
+                  >
+                    <Star
+                      className={`w-8 h-8 transition-colors ${
+                        star <= ratingQuality
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Review */}
         <Card className="border-0 shadow-lg mb-6">
           <CardHeader>
@@ -208,6 +341,53 @@ export default function RateMission() {
               placeholder="Partagez votre expérience..."
               className="min-h-[100px]"
             />
+          </CardContent>
+        </Card>
+
+        {/* Preferences */}
+        <Card className="border-0 shadow-lg mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Préférences</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="favorite"
+                checked={addToFavorites}
+                onCheckedChange={setAddToFavorites}
+              />
+              <label
+                htmlFor="favorite"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+              >
+                <Heart className="w-4 h-4 text-red-500" />
+                Ajouter aux favoris
+              </label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="block"
+                checked={blockIntervenant}
+                onCheckedChange={setBlockIntervenant}
+              />
+              <label
+                htmlFor="block"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+              >
+                <Ban className="w-4 h-4 text-red-500" />
+                Bloquer cet intervenant
+              </label>
+            </div>
+
+            {blockIntervenant && (
+              <Input
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                placeholder="Raison du blocage (optionnel)"
+                className="mt-2"
+              />
+            )}
           </CardContent>
         </Card>
 

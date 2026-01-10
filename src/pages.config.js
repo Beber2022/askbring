@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TrackMission from './pages/TrackMission';
+import IntervenantPreferences from './pages/IntervenantPreferences';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "RateMission": RateMission,
     "StoreCards": StoreCards,
     "TrackMission": TrackMission,
+    "IntervenantPreferences": IntervenantPreferences,
 }
 
 export const pagesConfig = {
