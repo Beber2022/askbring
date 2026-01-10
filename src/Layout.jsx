@@ -146,17 +146,26 @@ export default function Layout({ children, currentPageName }) {
       ) : (
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
           <style>{`
-          :root {
-            --primary: 160 84% 39%;
-            --primary-foreground: 0 0% 100%;
-          }
-          .nav-link-active {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-          }
-        `}</style>
-      
-      {/* Header */}
+            :root {
+              --primary: 160 84% 39%;
+              --primary-foreground: 0 0% 100%;
+            }
+            .nav-link-active {
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+              color: white;
+            }
+          `}</style>
+
+              {/* Lien vers le Hub des fonctionnalités */}
+              {isAuthenticated && user && user.role === 'admin' && (
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2 text-center text-sm font-medium">
+                  <Link to={createPageUrl('FeaturesHub')} className="hover:underline flex items-center justify-center gap-2">
+                    📋 Voir toutes les fonctionnalités créées
+                  </Link>
+                </div>
+              )}
+
+              {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">

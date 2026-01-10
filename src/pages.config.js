@@ -30,6 +30,7 @@ import TrackMission from './pages/TrackMission';
 import Invoices from './pages/Invoices';
 import AdminIntervenantMap from './pages/AdminIntervenantMap';
 import MissionHistory from './pages/MissionHistory';
+import FeaturesHub from './pages/FeaturesHub';
 import __Layout from './Layout.jsx';
 
 
@@ -66,6 +67,7 @@ export const PAGES = {
     "Invoices": Invoices,
     "AdminIntervenantMap": AdminIntervenantMap,
     "MissionHistory": MissionHistory,
+    "FeaturesHub": FeaturesHub,
 }
 
 export const pagesConfig = {
