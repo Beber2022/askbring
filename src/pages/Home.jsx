@@ -29,6 +29,30 @@ export default function Home() {
       if (authenticated) {
         const userData = await base44.auth.me();
         setUser(userData);
+        
+        // Handle referral code from URL
+        const params = new URLSearchParams(window.location.search);
+        const refCode = params.get('ref');
+        if (refCode && !userData.referred_by && refCode !== userData.referral_code) {
+          try {
+            // Award 50 points to new user
+            await base44.auth.updateMe({ 
+              referred_by: refCode,
+              loyalty_points: (userData.loyalty_points || 0) + 50
+            });
+            
+            // Update referrer's total referrals count
+            const allUsers = await base44.entities.User.filter({ referral_code: refCode });
+            if (allUsers.length > 0) {
+              const referrer = allUsers[0];
+              await base44.entities.User.update(referrer.id, {
+                total_referrals: (referrer.total_referrals || 0) + 1
+              });
+            }
+          } catch (error) {
+            console.error('Error processing referral:', error);
+          }
+        }
       }
     };
     checkAuth();
