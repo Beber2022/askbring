@@ -1,17 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotifications } from './NotificationProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Bell, BellOff, CheckCircle, X } from 'lucide-react';
+import { Bell, BellOff, CheckCircle, X, MessageSquare, Clock, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function NotificationSettings() {
-  const { permission, requestPermission } = useNotifications();
+  const { permission, requestPermission, user } = useNotifications();
+  const [preferences, setPreferences] = useState({
+    messages: true,
+    mission_status: true,
+    mission_accepted: true,
+    new_missions: true,
+    sound: true,
+    group: true
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user?.notification_preferences) {
+      setPreferences(user.notification_preferences);
+    }
+  }, [user]);
 
   const handleEnableNotifications = async () => {
     await requestPermission();
+  };
+
+  const updatePreference = async (key, value) => {
+    const newPreferences = { ...preferences, [key]: value };
+    setPreferences(newPreferences);
+    
+    try {
+      await base44.auth.updateMe({ notification_preferences: newPreferences });
+      toast({ title: "Préférences mises à jour" });
+    } catch (error) {
+      toast({ title: "Erreur", variant: "destructive" });
+    }
   };
 
   return (
@@ -39,9 +68,10 @@ export default function NotificationSettings() {
                   Vous recevrez des notifications pour:
                 </p>
                 <ul className="text-sm text-emerald-700 mt-2 space-y-1">
-                  <li>• Nouveaux messages dans vos missions</li>
-                  <li>• Nouvelles missions disponibles (intervenants)</li>
-                  <li>• Missions acceptées (clients)</li>
+                  <li>• Nouveaux messages</li>
+                  <li>• Changements de statut des missions</li>
+                  <li>• Missions acceptées et mises à jour</li>
+                  {user?.user_type === 'intervenant' && <li>• Nouvelles missions disponibles</li>}
                 </ul>
               </div>
             </div>
@@ -91,23 +121,97 @@ export default function NotificationSettings() {
           </motion.div>
         )}
 
-        <div className="pt-4 border-t space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="font-medium">Son des notifications</Label>
-              <p className="text-xs text-gray-500">Émettre un son pour chaque notification</p>
+        {permission === 'granted' && (
+          <div className="pt-4 border-t space-y-4">
+            <h4 className="font-medium text-gray-900 mb-3">Types de notifications</h4>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-gray-500" />
+                <div>
+                  <Label className="font-medium">Nouveaux messages</Label>
+                  <p className="text-xs text-gray-500">Notifications pour les messages reçus</p>
+                </div>
+              </div>
+              <Switch 
+                checked={preferences.messages} 
+                onCheckedChange={(checked) => updatePreference('messages', checked)}
+              />
             </div>
-            <Switch defaultChecked />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="font-medium">Notifications de groupe</Label>
-              <p className="text-xs text-gray-500">Grouper les notifications similaires</p>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-500" />
+                <div>
+                  <Label className="font-medium">Changements de statut</Label>
+                  <p className="text-xs text-gray-500">Mises à jour des missions en cours</p>
+                </div>
+              </div>
+              <Switch 
+                checked={preferences.mission_status} 
+                onCheckedChange={(checked) => updatePreference('mission_status', checked)}
+              />
             </div>
-            <Switch defaultChecked />
+
+            {user?.user_type === 'client' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <Label className="font-medium">Missions acceptées</Label>
+                    <p className="text-xs text-gray-500">Quand un intervenant accepte votre mission</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={preferences.mission_accepted} 
+                  onCheckedChange={(checked) => updatePreference('mission_accepted', checked)}
+                />
+              </div>
+            )}
+
+            {user?.user_type === 'intervenant' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <Label className="font-medium">Nouvelles missions</Label>
+                    <p className="text-xs text-gray-500">Missions disponibles près de vous</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={preferences.new_missions} 
+                  onCheckedChange={(checked) => updatePreference('new_missions', checked)}
+                />
+              </div>
+            )}
+
+            <div className="pt-4 border-t">
+              <h4 className="font-medium text-gray-900 mb-3">Paramètres</h4>
+              
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <Label className="font-medium">Son des notifications</Label>
+                  <p className="text-xs text-gray-500">Émettre un son pour chaque notification</p>
+                </div>
+                <Switch 
+                  checked={preferences.sound} 
+                  onCheckedChange={(checked) => updatePreference('sound', checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="font-medium">Notifications groupées</Label>
+                  <p className="text-xs text-gray-500">Grouper les notifications similaires</p>
+                </div>
+                <Switch 
+                  checked={preferences.group} 
+                  onCheckedChange={(checked) => updatePreference('group', checked)}
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="p-3 bg-blue-50 rounded-lg">
           <p className="text-xs text-blue-700">

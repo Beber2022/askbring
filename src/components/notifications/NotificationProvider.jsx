@@ -142,6 +142,8 @@ export default function NotificationProvider({ children }) {
   };
 
   const checkForNewMessages = async () => {
+    if (!user?.notification_preferences?.messages) return;
+    
     try {
       // Get all missions where user is involved
       const myMissions = await base44.entities.Mission.filter({
@@ -206,6 +208,8 @@ export default function NotificationProvider({ children }) {
   };
 
   const checkForNewMissions = async () => {
+    if (!user?.notification_preferences?.new_missions) return;
+    
     try {
       const pendingMissions = await base44.entities.Mission.filter(
         { status: 'pending' },
@@ -266,6 +270,8 @@ export default function NotificationProvider({ children }) {
   };
 
   const checkForMissionAcceptance = async () => {
+    if (!user?.notification_preferences?.mission_accepted) return;
+    
     try {
       const myMissions = await base44.entities.Mission.filter(
         { client_email: user.email },
@@ -305,6 +311,8 @@ export default function NotificationProvider({ children }) {
   };
 
   const checkForMissionStatusUpdates = async () => {
+    if (!user?.notification_preferences?.mission_status) return;
+    
     try {
       const myMissions = await base44.entities.Mission.filter(
         { client_email: user.email },
