@@ -23,6 +23,7 @@ import CreateRecurringMission from './pages/CreateRecurringMission';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminMissions from './pages/AdminMissions';
+import MissionMap from './pages/MissionMap';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +53,7 @@ export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "AdminUsers": AdminUsers,
     "AdminMissions": AdminMissions,
+    "MissionMap": MissionMap,
 }
 
 export const pagesConfig = {

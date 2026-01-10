@@ -118,6 +118,7 @@ export default function Layout({ children, currentPageName }) {
 
   const intervenantNav = [
     { name: 'Dashboard', page: 'IntervenantDashboard', icon: Home },
+    { name: 'Carte missions', page: 'MissionMap', icon: MapPin },
     { name: 'Tournée du jour', page: 'TourneeDuJour', icon: MapPin },
     { name: 'Missions Disponibles', page: 'AvailableMissions', icon: ShoppingCart },
     { name: 'Mes Missions', page: 'IntervenantMissions', icon: Briefcase },
