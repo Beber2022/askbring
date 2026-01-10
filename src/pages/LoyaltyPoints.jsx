@@ -17,40 +17,26 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 
-const rewards = [
-  {
-    id: 'discount_5',
-    name: '5€ de réduction',
-    description: 'Réduction de 5€ sur les frais de service',
-    points: 100,
-    value: 5,
-    icon: Gift,
-    color: 'from-blue-500 to-blue-600'
-  },
-  {
-    id: 'discount_10',
-    name: '10€ de réduction',
-    description: 'Réduction de 10€ sur les frais de service',
-    points: 200,
-    value: 10,
-    icon: Award,
-    color: 'from-purple-500 to-purple-600'
-  },
-  {
-    id: 'free_service',
-    name: 'Frais de service gratuits',
-    description: 'Une mission avec frais de service offerts',
-    points: 300,
-    value: 15,
-    icon: Trophy,
-    color: 'from-emerald-500 to-teal-600'
-  }
-];
+const rewardIcons = {
+  discount: Gift,
+  free_delivery: ShoppingCart,
+  priority: TrendingUp,
+  exclusive: Trophy
+};
+
+const rewardColors = {
+  discount: 'from-blue-500 to-blue-600',
+  free_delivery: 'from-purple-500 to-purple-600',
+  priority: 'from-orange-500 to-orange-600',
+  exclusive: 'from-emerald-500 to-teal-600'
+};
 
 export default function LoyaltyPoints() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState(null);
+  const [rewards, setRewards] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,6 +47,18 @@ export default function LoyaltyPoints() {
     try {
       const userData = await base44.auth.me();
       setUser(userData);
+      
+      // Load available rewards
+      const rewardsData = await base44.entities.LoyaltyReward.filter({ is_active: true }, 'points_required');
+      setRewards(rewardsData);
+      
+      // Load user transactions
+      const transData = await base44.entities.LoyaltyTransaction.filter(
+        { user_email: userData.email },
+        '-created_date',
+        20
+      );
+      setTransactions(transData);
     } catch (error) {
       console.error('Error loading user:', error);
     } finally {
@@ -69,10 +67,10 @@ export default function LoyaltyPoints() {
   };
 
   const redeemReward = async (reward) => {
-    if (user.loyalty_points < reward.points) {
+    if (user.loyalty_points < reward.points_required) {
       toast({
         title: "Points insuffisants",
-        description: `Il vous faut ${reward.points} points pour cette récompense`,
+        description: `Il vous faut ${reward.points_required} points pour cette récompense`,
         variant: "destructive"
       });
       return;
@@ -80,15 +78,25 @@ export default function LoyaltyPoints() {
 
     setRedeeming(reward.id);
     try {
-      const newPoints = user.loyalty_points - reward.points;
+      const newPoints = user.loyalty_points - reward.points_required;
       await base44.auth.updateMe({ loyalty_points: newPoints });
+      
+      // Log transaction
+      await base44.entities.LoyaltyTransaction.create({
+        user_email: user.email,
+        points: -reward.points_required,
+        description: `Échange: ${reward.name}`,
+        transaction_type: 'spent'
+      });
       
       setUser({ ...user, loyalty_points: newPoints });
       
       toast({
         title: "Récompense échangée !",
-        description: `Vous avez reçu ${reward.name}. Code promo créé dans votre profil.`
+        description: `Vous avez reçu ${reward.name}`
       });
+      
+      await loadUser();
     } catch (error) {
       toast({
         title: "Erreur",
@@ -108,8 +116,8 @@ export default function LoyaltyPoints() {
   };
 
   const tier = getLoyaltyTier(user?.total_points_earned || 0);
-  const nextReward = rewards.find(r => r.points > (user?.loyalty_points || 0));
-  const progressToNext = nextReward ? ((user?.loyalty_points || 0) / nextReward.points) * 100 : 100;
+  const nextReward = rewards.find(r => r.points_required > (user?.loyalty_points || 0));
+  const progressToNext = nextReward ? ((user?.loyalty_points || 0) / nextReward.points_required) * 100 : 100;
 
   if (loading) {
     return (
@@ -164,11 +172,11 @@ export default function LoyaltyPoints() {
               <div className="mt-6 pt-6 border-t border-white/20">
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-sm text-white/90">Prochaine récompense</p>
-                  <p className="text-sm font-semibold">{nextReward.points} points</p>
+                  <p className="text-sm font-semibold">{nextReward.points_required} points</p>
                 </div>
                 <Progress value={progressToNext} className="h-2 bg-white/20" />
                 <p className="text-xs text-white/70 mt-2">
-                  Plus que {nextReward.points - (user?.loyalty_points || 0)} points pour {nextReward.name}
+                  Plus que {nextReward.points_required - (user?.loyalty_points || 0)} points pour {nextReward.name}
                 </p>
               </div>
             )}
@@ -221,8 +229,9 @@ export default function LoyaltyPoints() {
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Récompenses disponibles</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {rewards.map((reward) => {
-              const Icon = reward.icon;
-              const canRedeem = (user?.loyalty_points || 0) >= reward.points;
+              const Icon = rewardIcons[reward.reward_type] || Gift;
+              const color = rewardColors[reward.reward_type] || 'from-blue-500 to-blue-600';
+              const canRedeem = (user?.loyalty_points || 0) >= reward.points_required;
               
               return (
                 <motion.div
@@ -232,22 +241,27 @@ export default function LoyaltyPoints() {
                   whileHover={{ scale: 1.02 }}
                 >
                   <Card className={`border-0 shadow-lg overflow-hidden ${!canRedeem && 'opacity-60'}`}>
-                    <div className={`h-2 bg-gradient-to-r ${reward.color}`} />
+                    <div className={`h-2 bg-gradient-to-r ${color}`} />
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
-                        <div className={`w-14 h-14 bg-gradient-to-br ${reward.color} rounded-xl flex items-center justify-center`}>
+                        <div className={`w-14 h-14 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center`}>
                           <Icon className="w-7 h-7 text-white" />
                         </div>
                         <Badge variant={canRedeem ? "default" : "secondary"} className="bg-emerald-100 text-emerald-700">
-                          {reward.points} pts
+                          {reward.points_required} pts
                         </Badge>
                       </div>
                       <h3 className="font-semibold text-gray-900 text-lg mb-2">{reward.name}</h3>
                       <p className="text-sm text-gray-600 mb-4">{reward.description}</p>
+                      {reward.discount_amount > 0 && (
+                        <Badge className="mb-4 bg-emerald-50 text-emerald-700">
+                          -{reward.discount_amount}€
+                        </Badge>
+                      )}
                       <Button
                         onClick={() => redeemReward(reward)}
                         disabled={!canRedeem || redeeming === reward.id}
-                        className={`w-full ${canRedeem ? `bg-gradient-to-r ${reward.color} hover:opacity-90` : ''}`}
+                        className={`w-full ${canRedeem ? `bg-gradient-to-r ${color} hover:opacity-90` : ''}`}
                       >
                         {redeeming === reward.id ? (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -257,7 +271,7 @@ export default function LoyaltyPoints() {
                             Échanger
                           </>
                         ) : (
-                          `${reward.points - (user?.loyalty_points || 0)} pts manquants`
+                          `${reward.points_required - (user?.loyalty_points || 0)} pts manquants`
                         )}
                       </Button>
                     </CardContent>
@@ -267,6 +281,41 @@ export default function LoyaltyPoints() {
             })}
           </div>
         </div>
+
+        {/* Transactions History */}
+        {transactions.length > 0 && (
+          <Card className="border-0 shadow-lg mb-8">
+            <CardHeader>
+              <CardTitle>Historique des points</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(transaction.created_date).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <span className={`text-lg font-bold ${
+                      transaction.points > 0 ? 'text-emerald-600' : 'text-red-600'
+                    }`}>
+                      {transaction.points > 0 ? '+' : ''}{transaction.points}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats */}
         <Card className="border-0 shadow-lg">

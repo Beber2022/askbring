@@ -100,7 +100,9 @@ export default function Layout({ children, currentPageName }) {
   const adminNav = [
     { name: 'Dashboard', page: 'AdminDashboard', icon: LayoutDashboard },
     { name: 'Utilisateurs', page: 'AdminUsers', icon: Users },
+    { name: 'Bringeurs', page: 'AdminIntervenants', icon: Star },
     { name: 'Missions', page: 'AdminMissions', icon: Briefcase },
+    { name: 'Fidélité', page: 'AdminLoyalty', icon: Star },
     { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
 
