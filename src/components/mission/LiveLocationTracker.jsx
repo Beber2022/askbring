@@ -14,7 +14,7 @@ export function useLiveLocationTracking(user, activeMissionId) {
     // Function to update location
     const updateLocation = async (position) => {
       try {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy, speed, heading } = position.coords;
         
         // Update or create location record
         const existingLocations = await base44.entities.IntervenantLocation.filter({
@@ -37,6 +37,17 @@ export function useLiveLocationTracking(user, activeMissionId) {
             current_mission_id: activeMissionId
           });
         }
+
+        // Save to location history
+        await base44.entities.LocationHistory.create({
+          user_email: user.email,
+          mission_id: activeMissionId,
+          latitude,
+          longitude,
+          accuracy: accuracy || 0,
+          speed: speed || 0,
+          heading: heading || 0
+        });
       } catch (error) {
         console.error('Error updating location:', error);
       }

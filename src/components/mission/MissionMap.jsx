@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { base44 } from '@/api/base44Client';
@@ -43,8 +43,21 @@ function MapUpdater({ center }) {
   return null;
 }
 
-export default function MissionMap({ mission, height = '400px', showLiveIndicator = true }) {
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+export default function MissionMap({ mission, height = '400px', showLiveIndicator = true, showRoute = false }) {
   const [intervenantLocation, setIntervenantLocation] = useState(null);
+  const [locationHistory, setLocationHistory] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
 
   useEffect(() => {
@@ -64,13 +77,31 @@ export default function MissionMap({ mission, height = '400px', showLiveIndicato
       }
     };
 
+    const loadHistory = async () => {
+      if (!showRoute || !mission?.id) return;
+      try {
+        const history = await base44.entities.LocationHistory.filter({
+          user_email: mission.intervenant_email,
+          mission_id: mission.id
+        }, 'created_date', 100);
+        setLocationHistory(history);
+      } catch (error) {
+        console.error('Error loading location history:', error);
+      }
+    };
+
     // Load immediately
     loadLocation();
+    loadHistory();
 
-    // Poll every 10 seconds
-    const interval = setInterval(loadLocation, 10000);
+    // Poll every 5 seconds for real-time tracking
+    const interval = setInterval(() => {
+      loadLocation();
+      loadHistory();
+    }, 5000);
+    
     return () => clearInterval(interval);
-  }, [mission?.intervenant_email]);
+  }, [mission?.intervenant_email, mission?.id, showRoute]);
 
   const defaultCenter = [48.8566, 2.3522]; // Paris
   const mapCenter = intervenantLocation 
@@ -79,19 +110,48 @@ export default function MissionMap({ mission, height = '400px', showLiveIndicato
     ? [mission.delivery_lat, mission.delivery_lng]
     : defaultCenter;
 
+  const routeCoordinates = locationHistory.map(loc => [loc.latitude, loc.longitude]);
+  
+  const distance = intervenantLocation && mission?.delivery_lat && mission?.delivery_lng
+    ? calculateDistance(
+        intervenantLocation.latitude,
+        intervenantLocation.longitude,
+        mission.delivery_lat,
+        mission.delivery_lng
+      )
+    : null;
+
   return (
     <Card className="border-0 shadow-lg overflow-hidden">
       <CardContent className="p-0 relative">
         {showLiveIndicator && intervenantLocation && (
-          <div className="absolute top-4 right-4 z-[1000]">
+          <div className="absolute top-4 left-4 z-[1000]">
             <Badge className="bg-emerald-500 text-white shadow-lg flex items-center gap-2">
               <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-              EN DIRECT
-              {lastUpdate && (
-                <span className="text-xs opacity-80">
-                  • Mis à jour il y a {Math.floor((new Date() - lastUpdate) / 1000)}s
-                </span>
-              )}
+              <div className="flex flex-col">
+                <span className="font-semibold">EN DIRECT</span>
+                {lastUpdate && (
+                  <span className="text-[10px] opacity-80">
+                    Mis à jour il y a {Math.floor((new Date() - lastUpdate) / 1000)}s
+                  </span>
+                )}
+              </div>
+            </Badge>
+          </div>
+        )}
+
+        {distance && (
+          <div className="absolute top-4 right-4 z-[1000]">
+            <Badge className="bg-white text-gray-900 shadow-lg">
+              📍 {distance.toFixed(1)} km
+            </Badge>
+          </div>
+        )}
+
+        {showRoute && locationHistory.length > 0 && (
+          <div className="absolute bottom-4 left-4 z-[1000]">
+            <Badge className="bg-white text-gray-700 shadow-lg">
+              {locationHistory.length} points GPS enregistrés
             </Badge>
           </div>
         )}
@@ -109,6 +169,19 @@ export default function MissionMap({ mission, height = '400px', showLiveIndicato
             />
             <MapUpdater center={mapCenter} />
             
+            {/* Route history */}
+            {showRoute && routeCoordinates.length > 1 && (
+              <Polyline
+                positions={routeCoordinates}
+                pathOptions={{
+                  color: '#10b981',
+                  weight: 3,
+                  opacity: 0.7,
+                  dashArray: '10, 5'
+                }}
+              />
+            )}
+
             {/* Intervenant marker */}
             {intervenantLocation && (
               <Marker 
@@ -122,9 +195,11 @@ export default function MissionMap({ mission, height = '400px', showLiveIndicato
                       <p className="font-semibold text-gray-900">{mission.intervenant_name}</p>
                     </div>
                     <p className="text-sm text-gray-600">Votre intervenant</p>
-                    <Badge className="mt-2 bg-emerald-100 text-emerald-700 text-xs">
-                      En déplacement
-                    </Badge>
+                    {distance && (
+                      <Badge className="mt-2 bg-emerald-100 text-emerald-700 text-xs">
+                        À {distance.toFixed(2)} km
+                      </Badge>
+                    )}
                   </div>
                 </Popup>
               </Marker>
