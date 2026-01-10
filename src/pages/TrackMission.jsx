@@ -57,13 +57,13 @@ const statusSteps = [
   { status: 'completed', label: 'Livrée', icon: CheckCircle },
 ];
 
-function MapUpdater({ center }) {
+function MapUpdater({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
     if (center) {
-      map.setView(center, 14);
+      map.setView(center, zoom || 14, { animate: true, duration: 1 });
     }
-  }, [center, map]);
+  }, [center, map, zoom]);
   return null;
 }
 
@@ -76,25 +76,26 @@ export default function TrackMission() {
 
   useEffect(() => {
     loadData();
-    // Poll for location updates every 10 seconds
+    // Poll for location updates every 5 seconds for real-time tracking
     const interval = setInterval(() => {
-      const params = new URLSearchParams(window.location.search);
-      const missionId = params.get('id');
-      
       if (mission?.intervenant_email) {
         base44.entities.IntervenantLocation.filter({
           user_email: mission.intervenant_email
-        }).then(locations => {
-          if (locations.length > 0) {
-            setIntervenantLocation(locations[0]);
-            setLastLocationUpdate(new Date());
+        }, '-updated_date', 1).then(locations => {
+          if (locations.length > 0 && locations[0].updated_date) {
+            const newUpdateTime = new Date(locations[0].updated_date);
+            // Only update if location has changed
+            if (!lastLocationUpdate || newUpdateTime > lastLocationUpdate) {
+              setIntervenantLocation(locations[0]);
+              setLastLocationUpdate(newUpdateTime);
+            }
           }
         }).catch(err => console.error('Error updating location:', err));
       }
-    }, 10000);
+    }, 5000);
     
     return () => clearInterval(interval);
-  }, [mission?.intervenant_email]);
+  }, [mission?.intervenant_email, lastLocationUpdate]);
 
   // Track intervenant location if they are viewing their own mission
   const isIntervenant = user?.email === mission?.intervenant_email;
@@ -160,6 +161,27 @@ export default function TrackMission() {
     ? [mission.delivery_lat, mission.delivery_lng]
     : defaultCenter;
 
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const distance = intervenantLocation && mission.delivery_lat && mission.delivery_lng
+    ? calculateDistance(
+        intervenantLocation.latitude,
+        intervenantLocation.longitude,
+        mission.delivery_lat,
+        mission.delivery_lng
+      )
+    : null;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -200,7 +222,7 @@ export default function TrackMission() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <MapUpdater center={mapCenter} />
+          <MapUpdater center={mapCenter} zoom={distance && distance < 2 ? 15 : 14} />
           
           {/* Intervenant marker */}
           {intervenantLocation && (
@@ -234,16 +256,19 @@ export default function TrackMission() {
         </MapContainer>
 
         {/* Live indicator */}
-        <div className="absolute top-4 right-4 z-[1000]">
+        <div className="absolute top-4 right-4 z-[1000] space-y-2">
           <Badge className="bg-emerald-500 text-white shadow-lg flex items-center gap-2">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
             EN DIRECT
-            {lastLocationUpdate && (
-              <span className="text-xs opacity-90">
-                • {Math.floor((new Date() - lastLocationUpdate) / 1000)}s
-              </span>
-            )}
           </Badge>
+          {distance !== null && (
+            <Badge className="bg-white text-gray-700 shadow-lg flex items-center gap-2">
+              <MapPin className="w-3 h-3" />
+              {distance < 1 
+                ? `${(distance * 1000).toFixed(0)} m` 
+                : `${distance.toFixed(1)} km`}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -294,6 +319,23 @@ export default function TrackMission() {
                 <p className="text-xl font-bold text-gray-900">
                   {statusSteps.find(s => s.status === mission.status)?.label || mission.status}
                 </p>
+                {distance !== null && (
+                  <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-600">
+                    <MapPin className="w-4 h-4" />
+                    <span>
+                      {distance < 0.5 
+                        ? "L'intervenant arrive !" 
+                        : distance < 1
+                        ? `À moins d'1 km`
+                        : `À ${distance.toFixed(1)} km`}
+                    </span>
+                  </div>
+                )}
+                {lastLocationUpdate && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Dernière mise à jour: {Math.floor((new Date() - lastLocationUpdate) / 1000)}s
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
