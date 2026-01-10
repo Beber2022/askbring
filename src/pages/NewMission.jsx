@@ -306,43 +306,19 @@ export default function NewMission() {
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label>Adresse de livraison *</Label>
-                    
-                    {savedAddresses.length > 0 && !showNewAddress && (
-                      <div className="space-y-2">
-                        <Select
-                          value={formData.delivery_address}
-                          onValueChange={(value) => {
-                            if (value === 'new') {
-                              setShowNewAddress(true);
-                              setFormData({ ...formData, delivery_address: '' });
-                            } else {
-                              setFormData({ ...formData, delivery_address: value });
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une adresse" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {savedAddresses.map((addr) => (
-                              <SelectItem key={addr.id} value={addr.address}>
-                                {addr.label} - {addr.address.substring(0, 50)}...
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="new">+ Nouvelle adresse</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    
-                    {(savedAddresses.length === 0 || showNewAddress) && (
-                      <Textarea
-                        value={formData.delivery_address}
-                        onChange={(e) => setFormData({ ...formData, delivery_address: e.target.value })}
-                        placeholder="Votre adresse complète..."
-                        className="min-h-[80px]"
-                      />
-                    )}
+                    <AddressAutocomplete
+                      value={formData.delivery_address}
+                      onChange={(value) => setFormData({ ...formData, delivery_address: value })}
+                      onSelectAddress={(address) => {
+                        setFormData({
+                          ...formData,
+                          delivery_address: address.address,
+                          delivery_lat: address.latitude,
+                          delivery_lng: address.longitude
+                        });
+                      }}
+                      placeholder="Commencez à taper ou sélectionnez une adresse"
+                    />
                   </div>
 
                   <div className="space-y-2">
