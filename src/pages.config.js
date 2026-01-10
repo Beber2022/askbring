@@ -16,6 +16,7 @@ import RateClient from './pages/RateClient';
 import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TrackMission from './pages/TrackMission';
+import TourneeDuJour from './pages/TourneeDuJour';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "RateMission": RateMission,
     "StoreCards": StoreCards,
     "TrackMission": TrackMission,
+    "TourneeDuJour": TourneeDuJour,
 }
 
 export const pagesConfig = {
