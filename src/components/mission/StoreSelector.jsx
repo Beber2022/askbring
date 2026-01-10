@@ -4,13 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 
 const stores = [
-  { id: 'carrefour', name: 'Carrefour', color: '#004E9A', logo: '🛒' },
-  { id: 'leclerc', name: 'E.Leclerc', color: '#E41D35', logo: '🏪' },
-  { id: 'auchan', name: 'Auchan', color: '#E2001A', logo: '🛍️' },
-  { id: 'intermarche', name: 'Intermarché', color: '#E50019', logo: '🏬' },
-  { id: 'lidl', name: 'Lidl', color: '#0050AA', logo: '🛒' },
-  { id: 'monoprix', name: 'Monoprix', color: '#E4002B', logo: '🏪' },
-  { id: 'franprix', name: 'Franprix', color: '#E40046', logo: '🛍️' },
+  { id: 'carrefour', name: 'Carrefour', color: '#004E9A', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/200px-Carrefour_logo.svg.png' },
+  { id: 'leclerc', name: 'E.Leclerc', color: '#E41D35', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Logo_E.Leclerc_Sans_le_texte.svg/200px-Logo_E.Leclerc_Sans_le_texte.svg.png' },
+  { id: 'auchan', name: 'Auchan', color: '#E2001A', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Auchan_Logo.svg/200px-Auchan_Logo.svg.png' },
+  { id: 'intermarche', name: 'Intermarché', color: '#E50019', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Intermarche_logo.svg/200px-Intermarche_logo.svg.png' },
+  { id: 'lidl', name: 'Lidl', color: '#0050AA', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Lidl-Logo.svg/200px-Lidl-Logo.svg.png' },
+  { id: 'aldi', name: 'Aldi', color: '#0078D4', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Aldi_Nord_201x_logo.svg/200px-Aldi_Nord_201x_logo.svg.png' },
+  { id: 'monoprix', name: 'Monoprix', color: '#E4002B', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Monoprix_logo.svg/200px-Monoprix_logo.svg.png' },
+  { id: 'franprix', name: 'Franprix', color: '#E40046', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Franprix_logo.svg/200px-Franprix_logo.svg.png' },
   { id: 'other', name: 'Autre', color: '#6B7280', logo: '🏬' },
 ];
 
@@ -37,7 +38,17 @@ export default function StoreSelector({ selected, onSelect }) {
                   <Check className="w-3 h-3 text-white" />
                 </div>
               )}
-              <div className="text-3xl mb-2">{store.logo}</div>
+              <div className="flex items-center justify-center mb-2 h-12">
+                {store.id === 'other' ? (
+                  <span className="text-3xl">{store.logo}</span>
+                ) : (
+                  <img 
+                    src={store.logo} 
+                    alt={store.name}
+                    className="max-h-10 max-w-full object-contain"
+                  />
+                )}
+              </div>
               <p className="font-medium text-gray-700 text-sm">{store.name}</p>
             </CardContent>
           </Card>
