@@ -13,13 +13,15 @@ import {
   Store,
   MessageSquare,
   Play,
-  Check
+  Check,
+  Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { useLiveLocationTracking } from '@/components/mission/LiveLocationTracker';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -171,6 +173,15 @@ export default function IntervenantMissions() {
                     {status.nextStatus === 'completed' && <Check className="w-4 h-4 mr-2" />}
                     {status.nextLabel}
                   </Button>
+                )}
+                
+                {mission.status === 'completed' && !mission.client_rating && (
+                  <Link to={createPageUrl('RateClient') + `?id=${mission.id}`}>
+                    <Button className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700">
+                      <Star className="w-4 h-4 mr-2" />
+                      Noter
+                    </Button>
+                  </Link>
                 )}
               </div>
             </div>
