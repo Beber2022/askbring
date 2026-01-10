@@ -28,6 +28,7 @@ import ShoppingListEditor from '@/components/mission/ShoppingListEditor';
 import StoreSelector from '@/components/mission/StoreSelector';
 import AddressAutocomplete from '@/components/address/AddressAutocomplete';
 import { Star } from 'lucide-react';
+import { calculateDynamicPricing, PricingBreakdown } from '@/components/pricing/DynamicPricing';
 
 const steps = [
   { id: 1, title: 'Magasin', icon: Store },
@@ -47,6 +48,8 @@ export default function NewMission() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showNewAddress, setShowNewAddress] = useState(false);
+  const [pricingBreakdown, setPricingBreakdown] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
 
   const [formData, setFormData] = useState({
     store_name: '',
@@ -109,6 +112,19 @@ export default function NewMission() {
             requestPermission();
           }, 2000);
         }
+        
+        // Get user location for distance calculation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setUserLocation({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              });
+            },
+            (error) => console.log('Geolocation error:', error)
+          );
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -118,13 +134,33 @@ export default function NewMission() {
     loadData();
   }, []);
 
-  const calculateServiceFee = () => {
-    const baseFee = 5;
-    const percentage = formData.estimated_budget * 0.05;
-    return Math.max(baseFee, percentage);
+  const calculateServiceFee = async () => {
+    // Calculate distance if we have both locations
+    let distance = 0;
+    if (userLocation && formData.delivery_lat && formData.delivery_lng) {
+      const R = 6371;
+      const dLat = (formData.delivery_lat - userLocation.latitude) * Math.PI / 180;
+      const dLon = (formData.delivery_lng - userLocation.longitude) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(userLocation.latitude * Math.PI / 180) * 
+                Math.cos(formData.delivery_lat * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      distance = R * c;
+    }
+
+    const { serviceFee, breakdown } = await calculateDynamicPricing({
+      distance,
+      category: formData.category,
+      scheduledTime: formData.scheduled_time,
+      estimatedBudget: formData.estimated_budget
+    });
+    
+    setPricingBreakdown(breakdown);
+    return serviceFee;
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep === 1 && !formData.store_name) {
       toast({ title: "Sélectionnez un magasin", variant: "destructive" });
       return;
@@ -137,6 +173,13 @@ export default function NewMission() {
       toast({ title: "Entrez une adresse de livraison", variant: "destructive" });
       return;
     }
+    
+    // Calculate pricing dynamically when moving to summary
+    if (currentStep === 3) {
+      const fee = await calculateServiceFee();
+      setFormData(prev => ({ ...prev, service_fee: fee }));
+    }
+    
     setCurrentStep(prev => Math.min(prev + 1, 4));
   };
 
@@ -147,7 +190,8 @@ export default function NewMission() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const finalServiceFee = Math.max(0, calculateServiceFee() - (formData.loyalty_discount || 0));
+      const serviceFee = await calculateServiceFee();
+      const finalServiceFee = Math.max(0, serviceFee - (formData.loyalty_discount || 0));
       
       const missionData = {
         client_email: user.email,
@@ -527,8 +571,11 @@ export default function NewMission() {
                       </div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-gray-600">Frais de service</span>
-                        <span className="font-medium">{calculateServiceFee().toFixed(2)}€</span>
+                        <span className="font-medium">{(formData.service_fee || 5).toFixed(2)}€</span>
                       </div>
+                      {pricingBreakdown && (
+                        <PricingBreakdown breakdown={pricingBreakdown} serviceFee={formData.service_fee} />
+                      )}
                       {formData.loyalty_discount > 0 && (
                         <div className="flex justify-between items-center mb-2 text-emerald-700">
                           <span>Réduction fidélité</span>
@@ -538,7 +585,7 @@ export default function NewMission() {
                       <div className="flex justify-between items-center pt-2 border-t border-emerald-200">
                         <span className="font-semibold text-gray-900">Total estimé</span>
                         <span className="font-bold text-emerald-600 text-lg">
-                          {(formData.estimated_budget + Math.max(0, calculateServiceFee() - (formData.loyalty_discount || 0))).toFixed(2)}€
+                          {(formData.estimated_budget + Math.max(0, (formData.service_fee || 5) - (formData.loyalty_discount || 0))).toFixed(2)}€
                         </span>
                       </div>
                     </div>
