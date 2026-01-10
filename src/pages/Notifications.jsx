@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -6,13 +8,13 @@ import {
   MessageSquare, 
   CheckCircle, 
   MapPin,
-  Clock,
+  AlertCircle,
   Trash2,
-  Check
+  Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
 import moment from 'moment';
 import 'moment/locale/fr';
 import NotificationSettings from '@/components/notifications/NotificationSettings';
@@ -20,85 +22,32 @@ import NotificationSettings from '@/components/notifications/NotificationSetting
 moment.locale('fr');
 
 export default function Notifications() {
+  const [user, setUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const { toast } = useToast();
 
   useEffect(() => {
     loadNotifications();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadNotifications = async () => {
     try {
-      const user = await base44.auth.me();
-      
-      // Get recent messages
-      const myMissions = await base44.entities.Mission.filter({
-        $or: [
-          { client_email: user.email },
-          { intervenant_email: user.email }
-        ]
-      }, '-updated_date', 20);
+      const userData = await base44.auth.me();
+      setUser(userData);
 
-      const allNotifications = [];
+      // Get persistent notifications
+      const dbNotifications = await base44.entities.Notification.filter(
+        { user_email: userData.email },
+        '-created_date',
+        50
+      );
 
-      for (const mission of myMissions) {
-        // Messages notifications
-        const messages = await base44.entities.Message.filter(
-          { mission_id: mission.id },
-          '-created_date',
-          3
-        );
-
-        messages.forEach(msg => {
-          if (msg.sender_email !== user.email) {
-            allNotifications.push({
-              id: `msg-${msg.id}`,
-              type: 'message',
-              title: 'Nouveau message',
-              description: `${msg.sender_name}: ${msg.content.substring(0, 80)}...`,
-              time: msg.created_date,
-              missionId: mission.id,
-              icon: MessageSquare,
-              color: 'text-blue-600',
-              bgColor: 'bg-blue-100'
-            });
-          }
-        });
-
-        // Mission acceptance notifications
-        if (mission.client_email === user.email && mission.status === 'accepted' && mission.intervenant_name) {
-          allNotifications.push({
-            id: `accept-${mission.id}`,
-            type: 'acceptance',
-            title: 'Mission acceptée',
-            description: `${mission.intervenant_name} a accepté votre mission au ${mission.store_name}`,
-            time: mission.updated_date,
-            missionId: mission.id,
-            icon: CheckCircle,
-            color: 'text-green-600',
-            bgColor: 'bg-green-100'
-          });
-        }
-
-        // New mission notifications (for intervenants)
-        if (user.user_type === 'intervenant' && mission.status === 'pending') {
-          allNotifications.push({
-            id: `mission-${mission.id}`,
-            type: 'mission',
-            title: 'Nouvelle mission disponible',
-            description: `${mission.store_name} - ${mission.shopping_list?.length || 0} articles`,
-            time: mission.created_date,
-            missionId: mission.id,
-            icon: MapPin,
-            color: 'text-emerald-600',
-            bgColor: 'bg-emerald-100'
-          });
-        }
-      }
-
-      // Sort by time
-      allNotifications.sort((a, b) => new Date(b.time) - new Date(a.time));
-      setNotifications(allNotifications.slice(0, 20));
+      setNotifications(dbNotifications);
     } catch (error) {
       console.error('Error loading notifications:', error);
     } finally {
@@ -106,9 +55,81 @@ export default function Notifications() {
     }
   };
 
-  const markAllAsRead = () => {
-    setNotifications([]);
+  const markAsRead = async (notificationId) => {
+    try {
+      await base44.entities.Notification.update(notificationId, { is_read: true });
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      );
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
   };
+
+  const markAllAsRead = async () => {
+    try {
+      const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+      for (const id of unreadIds) {
+        await base44.entities.Notification.update(id, { is_read: true });
+      }
+      await loadNotifications();
+      toast({ title: "Toutes les notifications marquées comme lues" });
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    try {
+      await base44.entities.Notification.delete(notificationId);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      toast({ title: "Notification supprimée" });
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'message':
+        return MessageSquare;
+      case 'mission_update':
+        return CheckCircle;
+      case 'proximity':
+        return MapPin;
+      case 'new_mission':
+        return Package;
+      case 'urgent':
+        return AlertCircle;
+      default:
+        return Bell;
+    }
+  };
+
+  const getNotificationColor = (type) => {
+    switch (type) {
+      case 'message':
+        return 'text-blue-600 bg-blue-100';
+      case 'mission_update':
+        return 'text-emerald-600 bg-emerald-100';
+      case 'proximity':
+        return 'text-orange-600 bg-orange-100';
+      case 'new_mission':
+        return 'text-purple-600 bg-purple-100';
+      case 'urgent':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const filteredNotifications = notifications.filter(n => {
+    if (filter === 'all') return true;
+    if (filter === 'unread') return !n.is_read;
+    return n.type === filter;
+  });
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   if (loading) {
     return (
@@ -119,88 +140,166 @@ export default function Notifications() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-            <p className="text-gray-600 mt-1">{notifications.length} notification(s)</p>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <Bell className="w-8 h-8 text-emerald-600" />
+              Notifications
+            </h1>
+            <p className="text-gray-500 mt-1">
+              {unreadCount > 0 ? `${unreadCount} non lue(s)` : 'Tout est à jour'}
+            </p>
           </div>
-          {notifications.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={markAllAsRead}
-              className="flex items-center gap-2"
-            >
-              <Check className="w-4 h-4" />
-              Tout marquer comme lu
+          <div className="flex gap-2">
+            <Button onClick={loadNotifications} variant="outline" size="icon">
+              <Bell className="w-4 h-4" />
             </Button>
-          )}
+            {unreadCount > 0 && (
+              <Button onClick={markAllAsRead} variant="outline">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Tout marquer comme lu
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('all')}
+            className={filter === 'all' ? 'bg-emerald-500' : ''}
+          >
+            Toutes ({notifications.length})
+          </Button>
+          <Button
+            variant={filter === 'unread' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('unread')}
+            className={filter === 'unread' ? 'bg-emerald-500' : ''}
+          >
+            Non lues ({unreadCount})
+          </Button>
+          <Button
+            variant={filter === 'message' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('message')}
+            className={filter === 'message' ? 'bg-blue-500' : ''}
+          >
+            <MessageSquare className="w-3 h-3 mr-1" />
+            Messages
+          </Button>
+          <Button
+            variant={filter === 'mission_update' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('mission_update')}
+            className={filter === 'mission_update' ? 'bg-emerald-500' : ''}
+          >
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Missions
+          </Button>
+          <Button
+            variant={filter === 'proximity' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilter('proximity')}
+            className={filter === 'proximity' ? 'bg-orange-500' : ''}
+          >
+            <MapPin className="w-3 h-3 mr-1" />
+            Proximité
+          </Button>
         </div>
 
         <div className="space-y-6">
-          {/* Notification Settings Card */}
+          {/* Notification Settings */}
           <NotificationSettings />
 
           {/* Notifications List */}
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Récentes</h2>
-            
-            {notifications.length === 0 ? (
-              <Card className="border-0 shadow-lg">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <Bell className="w-10 h-10 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Aucune notification</h3>
-                  <p className="text-gray-500 text-center">
-                    Vous n'avez pas encore de notifications
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
+          {filteredNotifications.length === 0 ? (
+            <Card className="border-0 shadow-lg text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Bell className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {filter === 'all' ? 'Aucune notification' : 'Aucune notification dans cette catégorie'}
+              </h3>
+              <p className="text-gray-500">
+                {filter === 'all' ? 'Vous êtes à jour !' : 'Changez de filtre pour voir plus'}
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
               <AnimatePresence>
-                {notifications.map((notification, index) => {
-                  const Icon = notification.icon;
+                {filteredNotifications.map((notification, index) => {
+                  const Icon = getNotificationIcon(notification.type);
+                  const colorClass = getNotificationColor(notification.type);
                   return (
                     <motion.div
                       key={notification.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -100 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <Card className="border-0 shadow-md hover:shadow-lg transition-shadow cursor-pointer">
+                      <Card className={`border-0 shadow-lg hover:shadow-xl transition-all ${notification.is_read ? 'opacity-60' : ''}`}>
                         <CardContent className="p-4">
                           <div className="flex items-start gap-4">
-                            <div className={`w-12 h-12 ${notification.bgColor} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                              <Icon className={`w-6 h-6 ${notification.color}`} />
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+                              <Icon className="w-6 h-6" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <h3 className="font-semibold text-gray-900">{notification.title}</h3>
-                                <span className="text-xs text-gray-500 whitespace-nowrap">
-                                  {moment(notification.time).fromNow()}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600 line-clamp-2">
-                                {notification.description}
-                              </p>
-                              {notification.missionId && (
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1">
+                                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                                    {notification.title}
+                                    {!notification.is_read && (
+                                      <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                                    )}
+                                  </h3>
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {notification.message}
+                                  </p>
+                                </div>
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  className="mt-2 h-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                  onClick={() => {
-                                    window.location.href = `/app#/MissionDetails?id=${notification.missionId}`;
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    deleteNotification(notification.id);
                                   }}
                                 >
-                                  Voir les détails →
+                                  <Trash2 className="w-4 h-4 text-gray-400" />
                                 </Button>
-                              )}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-400">
+                                  {moment(notification.created_date).fromNow()}
+                                </p>
+                                <div className="flex gap-2">
+                                  {!notification.is_read && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => markAsRead(notification.id)}
+                                    >
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Marquer comme lu
+                                    </Button>
+                                  )}
+                                  {notification.action_url && (
+                                    <Link to={createPageUrl(notification.action_url.split('?')[0]) + (notification.action_url.includes('?') ? '?' + notification.action_url.split('?')[1] : '')}>
+                                      <Button size="sm" variant="outline">
+                                        Voir
+                                      </Button>
+                                    </Link>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
@@ -209,8 +308,8 @@ export default function Notifications() {
                   );
                 })}
               </AnimatePresence>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
