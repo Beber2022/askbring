@@ -275,6 +275,7 @@ export default function NewMission() {
                   <ShoppingListEditor
                     items={formData.shopping_list}
                     onChange={(items) => setFormData({ ...formData, shopping_list: items })}
+                    storeName={formData.store_name}
                   />
 
                   <div className="space-y-2">

@@ -1,13 +1,30 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, ShoppingBag } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, ShoppingBag, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 
-export default function ShoppingListEditor({ items, onChange }) {
+export default function ShoppingListEditor({ items, onChange, storeName }) {
   const [newItem, setNewItem] = useState('');
   const [newQuantity, setNewQuantity] = useState(1);
+  const [itemImages, setItemImages] = useState({});
+
+  useEffect(() => {
+    // Generate images for new items
+    items.forEach(async (item, index) => {
+      if (!itemImages[index] && item.item) {
+        try {
+          const prompt = `Photo de produit alimentaire en haute qualité: ${item.item}. Vue de face, fond blanc, style catalogue supermarché.`;
+          const { url } = await base44.integrations.Core.GenerateImage({ prompt });
+          setItemImages(prev => ({ ...prev, [index]: url }));
+        } catch (error) {
+          console.error('Error generating image:', error);
+        }
+      }
+    });
+  }, [items.length]);
 
   const addItem = () => {
     if (!newItem.trim()) return;
@@ -80,11 +97,22 @@ export default function ShoppingListEditor({ items, onChange }) {
                     exit={{ opacity: 0, x: 20 }}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 font-medium text-sm">
-                        {item.quantity}
+                    <div className="flex items-center gap-3 flex-1">
+                      {itemImages[index] ? (
+                        <img 
+                          src={itemImages[index]} 
+                          alt={item.item}
+                          className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5 text-gray-400 animate-pulse" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-gray-700 font-medium">{item.item}</p>
+                        <p className="text-xs text-gray-500">{item.quantity} unité{item.quantity > 1 ? 's' : ''}</p>
                       </div>
-                      <span className="text-gray-700">{item.item}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Input
