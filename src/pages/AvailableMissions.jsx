@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import MissionFilters from '@/components/mission/MissionFilters';
-import MissionRouteOptimizer from '@/components/intervenant/MissionRouteOptimizer';
+import AdvancedRouteOptimizer from '@/components/intervenant/AdvancedRouteOptimizer';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -288,10 +288,10 @@ export default function AvailableMissions() {
         {/* Filters */}
         <MissionFilters onFilterChange={applyFilters} userLocation={location} />
 
-        {/* Route Optimizer for Selected Missions */}
+        {/* Advanced Route Optimizer for Selected Missions */}
         {selectedMissions.length > 0 && (
           <div className="mb-6">
-            <MissionRouteOptimizer missions={selectedMissions} userLocation={location} />
+            <AdvancedRouteOptimizer missions={selectedMissions} userLocation={location} />
           </div>
         )}
 
