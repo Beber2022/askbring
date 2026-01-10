@@ -5,18 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
 const STORES = [
-  { name: 'Carrefour', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Hypermarché' },
-  { name: 'E.Leclerc', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Hypermarché' },
-  { name: 'Auchan', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Hypermarché' },
-  { name: 'Intermarché', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Supermarché' },
-  { name: 'Lidl', logo: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23FF0000%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2260%22 font-size=%2740%27 fill=%22white%22 text-anchor=%22middle%22 font-weight=%22bold%22%3ELidl%3C/text%3E%3C/svg%3E', category: 'Discount' },
-  { name: 'Aldi', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Discount' },
-  { name: 'Monoprix', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Supermarché' },
-  { name: 'Franprix', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Supermarché' },
-  { name: 'Match', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Supermarché' },
-  { name: 'Casino', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Supermarché' },
-  { name: 'Carrefour Market', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Supermarché' },
-  { name: 'Carrefour Express', logo: 'https://images.unsplash.com/photo-1568901346375-23c9450fc58c?w=200&h=200&fit=crop', category: 'Supermarché' },
+  { name: 'Carrefour', emoji: '🏬', category: 'Hypermarché' },
+  { name: 'E.Leclerc', emoji: '🏬', category: 'Hypermarché' },
+  { name: 'Auchan', emoji: '🏬', category: 'Hypermarché' },
+  { name: 'Intermarché', emoji: '🛒', category: 'Supermarché' },
+  { name: 'Lidl', emoji: '🛒', category: 'Discount' },
+  { name: 'Aldi', emoji: '🛒', category: 'Discount' },
+  { name: 'Monoprix', emoji: '🛒', category: 'Supermarché' },
+  { name: 'Franprix', emoji: '🛒', category: 'Supermarché' },
+  { name: 'Match', emoji: '🛒', category: 'Supermarché' },
+  { name: 'Casino', emoji: '🛒', category: 'Supermarché' },
+  { name: 'Carrefour Market', emoji: '🏬', category: 'Supermarché' },
+  { name: 'Carrefour Express', emoji: '🏬', category: 'Supermarché' },
 ];
 
 export default function StoreAutocomplete({ value, onChange, onSelect }) {
@@ -133,18 +133,10 @@ export default function StoreAutocomplete({ value, onChange, onSelect }) {
                     : 'bg-white hover:bg-gray-50'
                 }`}
               >
-                {/* Logo */}
-                <div className="w-12 h-12 rounded-lg flex-shrink-0 bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
-                  <img
-                    src={store.logo}
-                    alt={store.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.textContent = store.name.charAt(0);
-                    }}
-                  />
-                </div>
+               {/* Logo/Emoji */}
+               <div className="w-12 h-12 rounded-lg flex-shrink-0 bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center border border-emerald-200 text-lg">
+                 {store.emoji}
+               </div>
 
                 {/* Infos */}
                 <div className="flex-1 text-left">
