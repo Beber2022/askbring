@@ -37,9 +37,13 @@ const statusConfig = {
 };
 
 export default function ClientMissions() {
+  const { toast } = useToast();
   const [missions, setMissions] = useState([]);
+  const [filteredMissions, setFilteredMissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [missionToCancel, setMissionToCancel] = useState(null);
+  const [sortBy, setSortBy] = useState('-created_date');
   const [activeTab, setActiveTab] = useState('active');
 
   useEffect(() => {
@@ -266,6 +270,25 @@ export default function ClientMissions() {
             )}
           </TabsContent>
         </Tabs>
+        <AlertDialog open={!!missionToCancel} onOpenChange={() => setMissionToCancel(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Annuler cette mission ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir annuler cette mission ? Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Retour</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleCancelMission}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Oui, annuler
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.div>
     </div>
   );
