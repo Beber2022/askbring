@@ -555,7 +555,7 @@ export default function AdminDashboard() {
               </Link>
               <Link to={createPageUrl('AdminIntervenants')}>
                 <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                  <Star className="w-4 h-4 mr-2" />
+                  <Users className="w-4 h-4 mr-2" />
                   Gérer les Bringeurs
                 </Button>
               </Link>

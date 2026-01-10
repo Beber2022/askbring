@@ -24,6 +24,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminMissions from './pages/AdminMissions';
 import MissionMap from './pages/MissionMap';
+import AdminIntervenants from './pages/AdminIntervenants';
 import __Layout from './Layout.jsx';
 
 
@@ -54,6 +55,7 @@ export const PAGES = {
     "AdminUsers": AdminUsers,
     "AdminMissions": AdminMissions,
     "MissionMap": MissionMap,
+    "AdminIntervenants": AdminIntervenants,
 }
 
 export const pagesConfig = {
