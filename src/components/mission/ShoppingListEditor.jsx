@@ -14,18 +14,22 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
 
   useEffect(() => {
     // Generate images for new items
-    items.forEach(async (item, index) => {
+    items.forEach((item, index) => {
       if (!itemImages[index] && item.item) {
-        try {
-          const prompt = `Photo de produit alimentaire en haute qualité: ${item.item}. Vue de face, fond blanc, style catalogue supermarché.`;
-          const { url } = await base44.integrations.Core.GenerateImage({ prompt });
-          setItemImages(prev => ({ ...prev, [index]: url }));
-        } catch (error) {
-          console.error('Error generating image:', error);
-        }
+        generateImage(item.item, index);
       }
     });
-  }, [items.length]);
+  }, [items]);
+
+  const generateImage = async (itemName, index) => {
+    try {
+      const prompt = `Photo de produit alimentaire en haute qualité: ${itemName}. Vue de face, fond blanc, style catalogue supermarché.`;
+      const { url } = await base44.integrations.Core.GenerateImage({ prompt });
+      setItemImages(prev => ({ ...prev, [index]: url }));
+    } catch (error) {
+      console.error('Error generating image:', error);
+    }
+  };
 
   const addItem = () => {
     if (!newItem.trim()) return;
