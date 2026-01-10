@@ -56,6 +56,7 @@ export default function NotificationProvider({ children }) {
       if (user.user_type === 'client') {
         checkForMissionAcceptance();
         checkForMissionStatusUpdates();
+        checkIntervenantProximity();
       }
     }, 10000);
 
@@ -249,6 +250,16 @@ export default function NotificationProvider({ children }) {
               ).toFixed(1)
             : null;
 
+          // Create persistent notification
+          await base44.entities.Notification.create({
+            user_email: user.email,
+            title: 'Nouvelle mission près de vous !',
+            message: `${mission.store_name} - ${mission.shopping_list?.length || 0} articles (${(mission.service_fee || 0).toFixed(2)}€)${distance ? ` • ${distance} km` : ''}`,
+            type: 'new_mission',
+            mission_id: mission.id,
+            action_url: '/AvailableMissions'
+          });
+
           showNotification('Nouvelle mission près de vous !', {
             body: `${mission.store_name} - ${mission.shopping_list?.length || 0} articles (${(mission.service_fee || 0).toFixed(2)}€)${distance ? ` • ${distance} km` : ''}`,
             type: 'mission',
@@ -312,7 +323,7 @@ export default function NotificationProvider({ children }) {
 
   const checkForMissionStatusUpdates = async () => {
     if (!user?.notification_preferences?.mission_status) return;
-    
+
     try {
       const myMissions = await base44.entities.Mission.filter(
         { client_email: user.email },
@@ -335,6 +346,17 @@ export default function NotificationProvider({ children }) {
 
         if (updateTime > lastCheckTime && statusMessages[mission.status]) {
           const statusMsg = statusMessages[mission.status];
+
+          // Create persistent notification
+          await base44.entities.Notification.create({
+            user_email: user.email,
+            title: statusMsg.title,
+            message: `${statusMsg.body} - ${mission.store_name}`,
+            type: 'mission_update',
+            mission_id: mission.id,
+            action_url: `/MissionDetails?id=${mission.id}`
+          });
+
           showNotification(statusMsg.title, {
             body: `${statusMsg.body} - ${mission.store_name}`,
             type: 'statusUpdate',
@@ -355,6 +377,64 @@ export default function NotificationProvider({ children }) {
       }
     } catch (error) {
       console.error('Error checking for mission status updates:', error);
+    }
+  };
+
+  const checkIntervenantProximity = async () => {
+    try {
+      const activeMissions = await base44.entities.Mission.filter({
+        client_email: user.email,
+        status: { $in: ['delivering', 'in_progress'] }
+      });
+
+      for (const mission of activeMissions) {
+        if (!mission.intervenant_email || !mission.delivery_lat || !mission.delivery_lng) continue;
+
+        const locations = await base44.entities.IntervenantLocation.filter({
+          user_email: mission.intervenant_email
+        }, '-updated_date', 1);
+
+        if (locations.length > 0) {
+          const location = locations[0];
+          const distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            mission.delivery_lat,
+            mission.delivery_lng
+          );
+
+          // Notify when within 500m
+          if (distance < 0.5) {
+            const lastProximityNotif = lastChecked[`proximity_${mission.id}`] || 0;
+            if (Date.now() - lastProximityNotif > 300000) { // Max once per 5 min
+              await base44.entities.Notification.create({
+                user_email: user.email,
+                title: 'Votre intervenant arrive !',
+                message: `${mission.intervenant_name} est à moins de 500m de chez vous`,
+                type: 'proximity',
+                mission_id: mission.id,
+                action_url: `/TrackMission?id=${mission.id}`
+              });
+
+              showNotification('Votre intervenant arrive !', {
+                body: `${mission.intervenant_name} est à moins de 500m`,
+                type: 'alert',
+                tag: `proximity-${mission.id}`,
+                onClick: () => {
+                  window.location.href = `/app#/TrackMission?id=${mission.id}`;
+                }
+              });
+
+              setLastChecked(prev => ({
+                ...prev,
+                [`proximity_${mission.id}`]: Date.now()
+              }));
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking proximity:', error);
     }
   };
 

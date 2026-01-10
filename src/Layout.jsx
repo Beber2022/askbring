@@ -29,6 +29,42 @@ import {
 } from '@/components/ui/dropdown-menu';
 import NotificationProvider from '@/components/notifications/NotificationProvider';
 
+function NotificationBell() {
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  React.useEffect(() => {
+    const loadUnread = async () => {
+      try {
+        const user = await base44.auth.me();
+        const notifications = await base44.entities.Notification.filter({
+          user_email: user.email,
+          is_read: false
+        });
+        setUnreadCount(notifications.length);
+      } catch (error) {
+        console.log('Error loading notifications');
+      }
+    };
+
+    loadUnread();
+    const interval = setInterval(loadUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Link to={createPageUrl('Notifications')}>
+      <Button variant="ghost" size="icon" className="relative">
+        <Bell className="w-5 h-5 text-gray-600" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </Button>
+    </Link>
+  );
+}
+
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -136,11 +172,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-3">
               {isAuthenticated && user ? (
                 <>
-                  <Link to={createPageUrl('Notifications')}>
-                    <Button variant="ghost" size="icon" className="relative">
-                      <Bell className="w-5 h-5 text-gray-600" />
-                    </Button>
-                  </Link>
+                  <NotificationBell />
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
