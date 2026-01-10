@@ -22,12 +22,14 @@ import { useToast } from '@/components/ui/use-toast';
 import StoreSelector from '@/components/mission/StoreSelector';
 import ShoppingListEditor from '@/components/mission/ShoppingListEditor';
 import AddressAutocomplete from '@/components/address/AddressAutocomplete';
+import { calculateDynamicPricing, PricingBreakdown } from '@/components/pricing/DynamicPricing';
 
 export default function CreateRecurringMission() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [pricingBreakdown, setPricingBreakdown] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     frequency: 'weekly',
@@ -75,12 +77,22 @@ export default function CreateRecurringMission() {
     try {
       const user = await base44.auth.me();
       
+      // Calculate dynamic pricing for recurring mission
+      const nextExecution = calculateNextExecution();
+      const { serviceFee } = await calculateDynamicPricing({
+        distance: 0, // We don't know exact distance for recurring
+        category: formData.category,
+        scheduledTime: nextExecution,
+        estimatedBudget: formData.estimated_budget
+      });
+      
       const missionData = {
         ...formData,
+        service_fee: serviceFee,
         client_email: user.email,
         client_name: user.full_name,
         client_phone: user.phone,
-        next_execution_date: calculateNextExecution()
+        next_execution_date: nextExecution
       };
 
       if (editMode) {
@@ -187,7 +199,21 @@ export default function CreateRecurringMission() {
                   <Label>Catégorie</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(v) => setFormData({...formData, category: v})}
+                    onValueChange={async (v) => {
+                      setFormData({...formData, category: v});
+                      // Recalculate pricing when category changes
+                      if (formData.estimated_budget > 0) {
+                        const nextExec = calculateNextExecution();
+                        const { serviceFee, breakdown } = await calculateDynamicPricing({
+                          distance: 0,
+                          category: v,
+                          scheduledTime: nextExec,
+                          estimatedBudget: formData.estimated_budget
+                        });
+                        setFormData(prev => ({...prev, service_fee: serviceFee}));
+                        setPricingBreakdown(breakdown);
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -202,6 +228,19 @@ export default function CreateRecurringMission() {
                     </SelectContent>
                   </Select>
                 </div>
+                {formData.service_fee > 0 && (
+                  <div>
+                    <Label>Frais de service estimés</Label>
+                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 mt-1">
+                      <span className="text-lg font-bold text-emerald-600">
+                        ~{formData.service_fee.toFixed(2)}€
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">
+                        (varie selon l'heure et la demande)
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -314,7 +353,23 @@ export default function CreateRecurringMission() {
                 <Input
                   type="number"
                   value={formData.estimated_budget}
-                  onChange={(e) => setFormData({...formData, estimated_budget: parseFloat(e.target.value)})}
+                  onChange={async (e) => {
+                    const budget = parseFloat(e.target.value) || 0;
+                    setFormData({...formData, estimated_budget: budget});
+                    
+                    // Recalculate pricing when budget changes
+                    if (budget > 0) {
+                      const nextExec = calculateNextExecution();
+                      const { serviceFee, breakdown } = await calculateDynamicPricing({
+                        distance: 0,
+                        category: formData.category,
+                        scheduledTime: nextExec,
+                        estimatedBudget: budget
+                      });
+                      setFormData(prev => ({...prev, estimated_budget: budget, service_fee: serviceFee}));
+                      setPricingBreakdown(breakdown);
+                    }
+                  }}
                   placeholder="0"
                 />
               </div>
