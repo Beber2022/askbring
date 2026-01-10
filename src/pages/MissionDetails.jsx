@@ -150,9 +150,21 @@ export default function MissionDetails() {
 
         {/* Live Map for active missions */}
         {['in_progress', 'shopping', 'delivering'].includes(mission.status) && mission.intervenant_name && (
-          <div className="mb-6">
-            <MissionMap mission={mission} height="350px" />
-          </div>
+          <Card className="border-0 shadow-lg mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-emerald-600" />
+                  Position en temps réel
+                </h3>
+                <Badge className="bg-green-100 text-green-700">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
+                  Actif
+                </Badge>
+              </div>
+              <MissionMap mission={mission} height="350px" showRoute={true} />
+            </CardContent>
+          </Card>
         )}
 
         <div className="grid lg:grid-cols-3 gap-6">
