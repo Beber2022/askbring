@@ -114,6 +114,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Carte', page: 'FindIntervenant', icon: MapPin },
     { name: 'Mes Cartes', page: 'StoreCards', icon: CreditCard },
     { name: 'Fidélité', page: 'LoyaltyPoints', icon: Star },
+    { name: 'Factures', page: 'Invoices', icon: Briefcase },
     { name: 'Intervenants', page: 'IntervenantPreferences', icon: User },
     { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
