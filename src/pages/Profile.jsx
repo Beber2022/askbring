@@ -31,6 +31,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import NotificationSettings from '@/components/notifications/NotificationSettings';
+import ReferralSection from '@/components/profile/ReferralSection';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -565,6 +566,9 @@ export default function Profile() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Referral Section */}
+        <ReferralSection user={user} />
 
         {/* Notification Settings */}
         <NotificationSettings />
