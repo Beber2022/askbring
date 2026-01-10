@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 export class InvoiceGenerator {
   static generateInvoiceNumber() {
@@ -64,59 +63,55 @@ export class InvoiceGenerator {
 
     yPosition += 20;
 
-    // Tableau des détails
-    const tableData = [
-      ['Description', 'Montant (€)'],
-      [
-        `Courses - ${mission.store_name}\n${mission.shopping_list?.length || 0} articles`,
-        `${(mission.actual_cost || mission.estimated_budget || 0).toFixed(2)}`
-      ],
-      [
-        'Frais de service (livraison)',
-        `${(mission.service_fee || 0).toFixed(2)}`
-      ]
+    // Tableau des détails (manuel)
+    const colWidth = (pageWidth - margin * 2) / 2;
+    const rowHeight = 8;
+
+    // En-tête du tableau
+    doc.setFillColor(16, 185, 129);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'bold');
+    doc.rect(margin, yPosition, colWidth, rowHeight, 'F');
+    doc.rect(margin + colWidth, yPosition, colWidth, rowHeight, 'F');
+    doc.text('Description', margin + 2, yPosition + 6);
+    doc.text('Montant (€)', margin + colWidth + 2, yPosition + 6);
+    yPosition += rowHeight;
+
+    // Lignes du tableau
+    doc.setTextColor(0, 0, 0);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+
+    const rows = [
+      [`Courses - ${mission.store_name}\n${mission.shopping_list?.length || 0} articles`, `${(mission.actual_cost || mission.estimated_budget || 0).toFixed(2)}`],
+      ['Frais de service (livraison)', `${(mission.service_fee || 0).toFixed(2)}`]
     ];
 
     if (mission.tip && mission.tip > 0) {
-      tableData.push(['Pourboire', `${parseFloat(mission.tip).toFixed(2)}`]);
+      rows.push(['Pourboire', `${parseFloat(mission.tip).toFixed(2)}`]);
     }
 
-    doc.autoTable({
-      startY: yPosition,
-      head: [tableData[0]],
-      body: tableData.slice(1),
-      margin: { left: margin, right: margin },
-      styles: {
-        fontSize: 10,
-        cellPadding: 5,
-        border: [0, 0, 0, 1],
-        borderColor: [220, 220, 220]
-      },
-      headStyles: {
-        backgroundColor: [16, 185, 129],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        border: 0
-      },
-      columnStyles: {
-        1: { halign: 'right' }
-      },
-      didDrawPage: (data) => {
-        yPosition = data.lastAutoTable.finalY + 10;
+    rows.forEach((row, idx) => {
+      if (idx % 2 === 0) {
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, yPosition, pageWidth - margin * 2, rowHeight, 'F');
       }
+      doc.text(row[0], margin + 2, yPosition + 6);
+      doc.text(row[1], margin + colWidth + 2, yPosition + 6, { align: 'left' });
+      yPosition += rowHeight;
     });
 
-    yPosition = doc.lastAutoTable.finalY + 15;
+    yPosition += 5;
 
     // Total
     doc.setFontSize(14);
     doc.setTextColor(16, 185, 129);
-    doc.text('MONTANT TOTAL', margin, yPosition);
-    doc.setFontSize(16);
     doc.setFont(undefined, 'bold');
-    doc.text(`${invoice.total_amount.toFixed(2)} €`, pageWidth - margin - 30, yPosition);
+    doc.text('MONTANT TOTAL', margin, yPosition);
+    doc.text(`${invoice.total_amount.toFixed(2)} €`, pageWidth - margin - 15, yPosition, { align: 'right' });
 
-    yPosition += 20;
+    yPosition += 15;
 
     // Conditions de paiement
     doc.setFontSize(9);
