@@ -156,6 +156,16 @@ export default function RateMission() {
             total_missions: newTotalMissions,
             total_earnings: (intervenant.total_earnings || 0) + (mission.service_fee || 0) + (parseFloat(tip) || 0)
           });
+          
+          // Notify intervenant about the rating
+          await base44.entities.Notification.create({
+            user_email: mission.intervenant_email,
+            title: 'Nouvelle évaluation reçue',
+            message: `${rating}/5 étoiles pour la mission ${mission.store_name}${parseFloat(tip) > 0 ? ` + ${tip}€ de pourboire !` : ''}`,
+            type: 'mission_update',
+            mission_id: mission.id,
+            action_url: `/IntervenantMissions`
+          });
         }
       }
 
