@@ -13,7 +13,10 @@ import {
   Package,
   Route,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +27,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import moment from 'moment';
 import 'moment/locale/fr';
+import { RouteOptimizationEngine } from '@/components/intervenant/RouteOptimizationEngine';
 
 moment.locale('fr');
 
@@ -48,8 +52,10 @@ export default function TourneeDuJour() {
   const [optimizedRoute, setOptimizedRoute] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [optimizing, setOptimizing] = useState(false);
   const [totalDistance, setTotalDistance] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState(0);
+  const [optimizationStats, setOptimizationStats] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -135,50 +141,43 @@ export default function TourneeDuJour() {
     const validMissions = missionsToOptimize.filter(m => m.delivery_lat && m.delivery_lng);
     if (validMissions.length === 0) return missionsToOptimize;
 
-    // Sort by priority first
-    const sortedByPriority = [...validMissions].sort((a, b) => 
-      getPriority(b) - getPriority(a)
-    );
+    // Utiliser le moteur d'optimisation avancé
+    const engine = new RouteOptimizationEngine(validMissions, {
+      latitude: startLocation.lat,
+      longitude: startLocation.lng
+    });
 
-    // Nearest neighbor algorithm with priority consideration
-    const route = [];
-    const remaining = [...sortedByPriority];
-    let current = startLocation;
-    let totalDist = 0;
+    const result = engine.optimize();
+    
+    setTotalDistance(parseFloat(result.stats.totalDistance));
+    setEstimatedTime(result.stats.totalTime);
+    setOptimizationStats(result.stats);
 
-    while (remaining.length > 0) {
-      let nearestIndex = 0;
-      let nearestDistance = Infinity;
-      
-      remaining.forEach((mission, index) => {
-        const distance = calculateDistance(
-          current.lat,
-          current.lng,
-          mission.delivery_lat,
-          mission.delivery_lng
-        );
-        
-        // Factor in priority (higher priority = artificially shorter distance)
-        const priorityFactor = getPriority(mission) / 100;
-        const adjustedDistance = distance * (1 - priorityFactor);
-        
-        if (adjustedDistance < nearestDistance) {
-          nearestDistance = distance; // Use real distance for calculation
-          nearestIndex = index;
-        }
+    return result.route;
+  };
+
+  const reoptimizeRoute = async () => {
+    setOptimizing(true);
+    try {
+      if (missions.length > 0 && currentLocation) {
+        const optimized = optimizeRoute(missions, {
+          lat: currentLocation.lat,
+          lng: currentLocation.lng
+        });
+        setOptimizedRoute(optimized);
+        toast({
+          title: "✨ Tournée réoptimisée",
+          description: `Distance: ${totalDistance.toFixed(1)} km | Temps: ${Math.floor(estimatedTime / 60)}h${estimatedTime % 60}m`
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur de réoptimisation",
+        variant: "destructive"
       });
-
-      const nearest = remaining[nearestIndex];
-      route.push(nearest);
-      totalDist += nearestDistance;
-      current = { lat: nearest.delivery_lat, lng: nearest.delivery_lng };
-      remaining.splice(nearestIndex, 1);
+    } finally {
+      setOptimizing(false);
     }
-
-    setTotalDistance(totalDist);
-    setEstimatedTime(Math.ceil(totalDist / 30 * 60)); // Assuming 30km/h average
-
-    return route;
   };
 
   const getMapCenter = () => {
@@ -251,14 +250,24 @@ export default function TourneeDuJour() {
                 {moment().format('dddd D MMMM YYYY')}
               </p>
             </div>
-            <Button
-              onClick={loadData}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Navigation className="w-4 h-4" />
-              Actualiser
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={reoptimizeRoute}
+                disabled={optimizing || missions.length === 0}
+                className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+              >
+                <Zap className={`w-4 h-4 ${optimizing ? 'animate-spin' : ''}`} />
+                {optimizing ? 'Optimisation...' : 'Réoptimiser'}
+              </Button>
+              <Button
+                onClick={loadData}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Actualiser
+              </Button>
+            </div>
           </div>
 
           {missions.length === 0 ? (
@@ -409,12 +418,28 @@ export default function TourneeDuJour() {
                       <div>
                         <p className="font-semibold text-gray-900">Itinéraire optimisé</p>
                         <p className="text-sm text-gray-600">
-                          Économisez {totalDistance > 0 ? ((totalDistance * 0.2).toFixed(1)) : '0'} km
+                          Facteur trafic: {optimizationStats?.trafficFactor?.toFixed(1)}x
                         </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {optimizationStats && (
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <BarChart3 className="w-8 h-8 text-purple-600" />
+                        <div>
+                          <p className="font-semibold text-gray-900">Statistiques</p>
+                          <p className="text-sm text-gray-600">
+                            Fin estimée: {optimizationStats.estimatedCompletion}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <div className="space-y-3">
                   <AnimatePresence>
@@ -458,20 +483,26 @@ export default function TourneeDuJour() {
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                                  <div className="flex items-center gap-3 flex-wrap text-xs text-gray-500">
                                     <span className="flex items-center gap-1">
                                       <Package className="w-3 h-3" />
                                       {mission.shopping_list?.length || 0} articles
                                     </span>
-                                    {index > 0 && optimizedRoute[index - 1].delivery_lat && (
+                                    {mission.distanceFromPrevious && (
                                       <span className="flex items-center gap-1">
                                         <Navigation className="w-3 h-3" />
-                                        {calculateDistance(
-                                          optimizedRoute[index - 1].delivery_lat,
-                                          optimizedRoute[index - 1].delivery_lng,
-                                          mission.delivery_lat,
-                                          mission.delivery_lng
-                                        ).toFixed(1)} km
+                                        {mission.distanceFromPrevious.toFixed(1)} km
+                                      </span>
+                                    )}
+                                    {mission.travelTime && (
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {mission.travelTime}m
+                                      </span>
+                                    )}
+                                    {mission.executionTime && (
+                                      <span className="text-emerald-600 font-medium">
+                                        +{mission.executionTime}m
                                       </span>
                                     )}
                                   </div>
