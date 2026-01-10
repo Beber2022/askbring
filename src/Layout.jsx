@@ -69,6 +69,7 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -79,8 +80,9 @@ export default function Layout({ children, currentPageName }) {
           const userData = await base44.auth.me();
           setUser(userData);
           
-          // Redirect to onboarding if not completed
-          if (!userData.onboarding_completed && currentPageName !== 'Onboarding') {
+          // Redirect to onboarding if not completed (only once)
+          if (!userData.onboarding_completed && currentPageName !== 'Onboarding' && !hasCheckedOnboarding) {
+            setHasCheckedOnboarding(true);
             window.location.href = '/#/Onboarding';
           }
         }
@@ -89,7 +91,7 @@ export default function Layout({ children, currentPageName }) {
       }
     };
     loadUser();
-  }, [currentPageName]);
+  }, [currentPageName, hasCheckedOnboarding]);
 
   const clientNav = [
     { name: 'Accueil', page: 'Home', icon: Home },
