@@ -12,7 +12,12 @@ import {
   Briefcase,
   Wallet,
   Shield,
-  CheckCircle
+  CheckCircle,
+  Upload,
+  FileText,
+  Building2,
+  Car,
+  Bike
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,8 +38,12 @@ export default function Profile() {
     phone: '',
     address: '',
     bio: '',
-    user_type: 'client'
+    user_type: 'client',
+    account_type: 'particulier',
+    siret_number: '',
+    transport_type: ''
   });
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,7 +55,10 @@ export default function Profile() {
           phone: userData.phone || '',
           address: userData.address || '',
           bio: userData.bio || '',
-          user_type: userData.user_type || 'client'
+          user_type: userData.user_type || 'client',
+          account_type: userData.account_type || 'particulier',
+          siret_number: userData.siret_number || '',
+          transport_type: userData.transport_type || ''
         });
       } catch (error) {
         console.error('Error loading user:', error);
@@ -96,6 +108,30 @@ export default function Profile() {
         description: "Impossible de télécharger la photo",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleDocumentUpload = async (e, documentType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.auth.updateMe({ [documentType]: file_url });
+      setUser(prev => ({ ...prev, [documentType]: file_url }));
+      toast({
+        title: "Document téléchargé",
+        description: "Votre document a été enregistré"
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de télécharger le document",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -301,6 +337,146 @@ export default function Profile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Additional Information */}
+        <Card className="border-0 shadow-lg mb-6">
+          <CardHeader>
+            <CardTitle>Informations complémentaires</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Account Type */}
+            <div className="space-y-3">
+              <Label>Type de compte</Label>
+              <RadioGroup
+                value={formData.account_type}
+                onValueChange={(value) => setFormData({ ...formData, account_type: value })}
+                className="grid grid-cols-2 gap-4"
+              >
+                <Label
+                  htmlFor="particulier"
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    formData.account_type === 'particulier'
+                      ? 'border-emerald-500 bg-emerald-50'
+                      : 'border-gray-200 hover:border-emerald-200'
+                  }`}
+                >
+                  <RadioGroupItem value="particulier" id="particulier" className="sr-only" />
+                  <User className={`w-8 h-8 mb-2 ${formData.account_type === 'particulier' ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  <span className={`font-medium ${formData.account_type === 'particulier' ? 'text-emerald-700' : 'text-gray-600'}`}>
+                    Particulier
+                  </span>
+                </Label>
+                <Label
+                  htmlFor="entreprise"
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    formData.account_type === 'entreprise'
+                      ? 'border-emerald-500 bg-emerald-50'
+                      : 'border-gray-200 hover:border-emerald-200'
+                  }`}
+                >
+                  <RadioGroupItem value="entreprise" id="entreprise" className="sr-only" />
+                  <Building2 className={`w-8 h-8 mb-2 ${formData.account_type === 'entreprise' ? 'text-emerald-600' : 'text-gray-400'}`} />
+                  <span className={`font-medium ${formData.account_type === 'entreprise' ? 'text-emerald-700' : 'text-gray-600'}`}>
+                    Entreprise
+                  </span>
+                </Label>
+              </RadioGroup>
+            </div>
+
+            {/* SIRET for companies */}
+            {formData.account_type === 'entreprise' && (
+              <div className="space-y-2">
+                <Label htmlFor="siret">Numéro SIRET</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="siret"
+                    value={formData.siret_number}
+                    onChange={(e) => setFormData({ ...formData, siret_number: e.target.value })}
+                    placeholder="123 456 789 00010"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Transport Type for intervenants */}
+            {formData.user_type === 'intervenant' && (
+              <div className="space-y-2">
+                <Label htmlFor="transport">Type de transport</Label>
+                <div className="relative">
+                  <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <select
+                    id="transport"
+                    value={formData.transport_type}
+                    onChange={(e) => setFormData({ ...formData, transport_type: e.target.value })}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  >
+                    <option value="">Sélectionner...</option>
+                    <option value="vélo">🚴 Vélo</option>
+                    <option value="voiture">🚗 Voiture</option>
+                    <option value="bus">🚌 Bus</option>
+                    <option value="moto">🏍️ Moto</option>
+                    <option value="trottinette">🛴 Trottinette</option>
+                    <option value="à pied">🚶 À pied</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Document Uploads */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Pièce d'identité</Label>
+                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-emerald-400 transition-colors">
+                  <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">
+                    {user?.id_document_url ? '✓ Document téléchargé' : 'Télécharger'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => handleDocumentUpload(e, 'id_document_url')}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Justificatif de domicile</Label>
+                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-emerald-400 transition-colors">
+                  <FileText className="w-8 h-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-500">
+                    {user?.address_proof_url ? '✓ Document téléchargé' : 'Télécharger'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => handleDocumentUpload(e, 'address_proof_url')}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+            >
+              {saving ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Sauvegarder
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Notification Settings */}
         <NotificationSettings />

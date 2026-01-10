@@ -1,8 +1,10 @@
 import AvailableMissions from './pages/AvailableMissions';
 import ClientMissions from './pages/ClientMissions';
+import FAQ from './pages/FAQ';
 import Home from './pages/Home';
 import IntervenantDashboard from './pages/IntervenantDashboard';
 import IntervenantMissions from './pages/IntervenantMissions';
+import LoyaltyPoints from './pages/LoyaltyPoints';
 import Messages from './pages/Messages';
 import MissionDetails from './pages/MissionDetails';
 import NewMission from './pages/NewMission';
@@ -11,17 +13,17 @@ import Profile from './pages/Profile';
 import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TrackMission from './pages/TrackMission';
-import LoyaltyPoints from './pages/LoyaltyPoints';
-import FAQ from './pages/FAQ';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AvailableMissions": AvailableMissions,
     "ClientMissions": ClientMissions,
+    "FAQ": FAQ,
     "Home": Home,
     "IntervenantDashboard": IntervenantDashboard,
     "IntervenantMissions": IntervenantMissions,
+    "LoyaltyPoints": LoyaltyPoints,
     "Messages": Messages,
     "MissionDetails": MissionDetails,
     "NewMission": NewMission,
@@ -30,8 +32,6 @@ export const PAGES = {
     "RateMission": RateMission,
     "StoreCards": StoreCards,
     "TrackMission": TrackMission,
-    "LoyaltyPoints": LoyaltyPoints,
-    "FAQ": FAQ,
 }
 
 export const pagesConfig = {
