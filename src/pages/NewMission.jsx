@@ -249,6 +249,15 @@ export default function NewMission() {
         await base44.auth.updateMe({
           loyalty_points: loyaltyPoints - pointsUsed
         });
+
+        // Log loyalty transaction
+        await base44.entities.LoyaltyTransaction.create({
+          user_email: user.email,
+          points: -pointsUsed,
+          mission_id: newMission.id,
+          description: `Utilisation de ${formData.loyalty_discount}€ de réduction`,
+          transaction_type: 'spent'
+        });
       }
       
       toast({

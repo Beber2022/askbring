@@ -26,6 +26,7 @@ import AdminMissions from './pages/AdminMissions';
 import MissionMap from './pages/MissionMap';
 import AdminIntervenants from './pages/AdminIntervenants';
 import Register from './pages/Register';
+import AdminLoyalty from './pages/AdminLoyalty';
 import __Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "MissionMap": MissionMap,
     "AdminIntervenants": AdminIntervenants,
     "Register": Register,
+    "AdminLoyalty": AdminLoyalty,
 }
 
 export const pagesConfig = {
