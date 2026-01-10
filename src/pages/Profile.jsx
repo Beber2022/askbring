@@ -32,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import NotificationSettings from '@/components/notifications/NotificationSettings';
 import ReferralSection from '@/components/profile/ReferralSection';
+import AddressAutocomplete from '@/components/address/AddressAutocomplete';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -310,16 +311,11 @@ export default function Profile() {
 
               <div className="space-y-2">
                 <Label htmlFor="address">Adresse par défaut</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Textarea
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="123 rue de la Paix, 75001 Paris"
-                    className="pl-10 min-h-[80px]"
-                  />
-                </div>
+                <AddressAutocomplete
+                  value={formData.address}
+                  onChange={(value) => setFormData({ ...formData, address: value })}
+                  placeholder="Commencez à taper ou sélectionnez une adresse sauvegardée"
+                />
               </div>
 
               <div className="space-y-2">
