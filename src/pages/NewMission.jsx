@@ -29,12 +29,14 @@ import StoreSelector from '@/components/mission/StoreSelector';
 import AddressAutocomplete from '@/components/address/AddressAutocomplete';
 import { Star } from 'lucide-react';
 import { calculateDynamicPricing, PricingBreakdown } from '@/components/pricing/DynamicPricing';
+import MissionTypeSelector, { missionTypes } from '@/components/mission/MissionTypeSelector';
 
 const steps = [
   { id: 1, title: 'Magasin', icon: Store },
   { id: 2, title: 'Articles', icon: ShoppingCart },
-  { id: 3, title: 'Livraison', icon: MapPin },
-  { id: 4, title: 'Résumé', icon: FileText },
+  { id: 3, title: 'Type', icon: Clock },
+  { id: 4, title: 'Livraison', icon: MapPin },
+  { id: 5, title: 'Résumé', icon: FileText },
 ];
 
 export default function NewMission() {
@@ -55,6 +57,7 @@ export default function NewMission() {
     store_name: '',
     store_address: '',
     category: 'courses_alimentaires',
+    mission_type: 'rapide',
     shopping_list: [],
     delivery_address: '',
     notes: '',
@@ -149,6 +152,10 @@ export default function NewMission() {
   }, []);
 
   const calculateServiceFee = async () => {
+    // Get base fee from mission type
+    const missionType = missionTypes.find(t => t.id === formData.mission_type);
+    const baseFee = missionType ? missionType.fee : 3;
+    
     // Calculate distance if we have both locations
     let distance = 0;
     if (userLocation && formData.delivery_lat && formData.delivery_lng) {
@@ -167,7 +174,9 @@ export default function NewMission() {
       distance,
       category: formData.category,
       scheduledTime: formData.scheduled_time,
-      estimatedBudget: formData.estimated_budget
+      estimatedBudget: formData.estimated_budget,
+      missionType: formData.mission_type,
+      baseFee
     });
     
     setPricingBreakdown(breakdown);
@@ -183,18 +192,22 @@ export default function NewMission() {
       toast({ title: "Ajoutez au moins un article", variant: "destructive" });
       return;
     }
-    if (currentStep === 3 && !formData.delivery_address) {
+    if (currentStep === 3 && !formData.mission_type) {
+      toast({ title: "Sélectionnez un type de mission", variant: "destructive" });
+      return;
+    }
+    if (currentStep === 4 && !formData.delivery_address) {
       toast({ title: "Entrez une adresse de livraison", variant: "destructive" });
       return;
     }
     
     // Calculate pricing dynamically when moving to summary
-    if (currentStep === 3) {
+    if (currentStep === 4) {
       const fee = await calculateServiceFee();
       setFormData(prev => ({ ...prev, service_fee: fee }));
     }
     
-    setCurrentStep(prev => Math.min(prev + 1, 4));
+    setCurrentStep(prev => Math.min(prev + 1, 5));
   };
 
   const prevStep = () => {
@@ -212,11 +225,14 @@ export default function NewMission() {
         client_name: user.full_name,
         client_phone: user.phone,
         client_preferences: formData.client_preferences,
+        mission_type: formData.mission_type,
         store_name: formData.store_name,
         store_address: formData.store_address,
         category: formData.category,
         shopping_list: formData.shopping_list,
         delivery_address: formData.delivery_address,
+        delivery_lat: formData.delivery_lat,
+        delivery_lng: formData.delivery_lng,
         notes: formData.notes,
         estimated_budget: formData.estimated_budget,
         service_fee: finalServiceFee,
@@ -278,7 +294,7 @@ export default function NewMission() {
           <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200" />
           <div 
             className="absolute top-5 left-0 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
-            style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
+            style={{ width: `${((currentStep - 1) / 4) * 100}%` }}
           />
           {steps.map((step, index) => (
             <div key={step.id} className="relative z-10 flex flex-col items-center">
@@ -400,8 +416,27 @@ export default function NewMission() {
               </Card>
             )}
 
-            {/* Step 3: Delivery */}
+            {/* Step 3: Mission Type */}
             {currentStep === 3 && (
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-emerald-600" />
+                    Type de mission
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <MissionTypeSelector
+                    selected={formData.mission_type}
+                    onSelect={(type) => setFormData({ ...formData, mission_type: type })}
+                    itemCount={formData.shopping_list.length}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Step 4: Delivery */}
+            {currentStep === 4 && (
               <Card className="border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -494,8 +529,8 @@ export default function NewMission() {
               </Card>
             )}
 
-            {/* Step 4: Summary */}
-            {currentStep === 4 && (
+            {/* Step 5: Summary */}
+            {currentStep === 5 && (
               <Card className="border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -622,7 +657,7 @@ export default function NewMission() {
             Retour
           </Button>
 
-          {currentStep < 4 ? (
+          {currentStep < 5 ? (
             <Button
               onClick={nextStep}
               className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 flex items-center gap-2"
