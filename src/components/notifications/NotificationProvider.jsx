@@ -51,11 +51,13 @@ export default function NotificationProvider({ children }) {
     const interval = setInterval(() => {
       checkForNewMessages();
       if (user.user_type === 'intervenant') {
-        checkForNewMissions();
+        checkForSmartMissionNotifications();
+        checkForMissionStatusChanges();
       }
       if (user.user_type === 'client') {
         checkForMissionAcceptance();
         checkForMissionStatusUpdates();
+        checkForIntervenantDelay();
         checkIntervenantProximity();
       }
     }, 5000);
@@ -217,14 +219,14 @@ export default function NotificationProvider({ children }) {
     return R * c;
   };
 
-  const checkForNewMissions = async () => {
+  const checkForSmartMissionNotifications = async () => {
     if (!user?.notification_preferences?.new_missions) return;
-    
+
     try {
       const pendingMissions = await base44.entities.Mission.filter(
         { status: 'pending' },
         '-created_date',
-        10
+        20
       );
 
       // Check if there are new missions since last check
@@ -233,50 +235,58 @@ export default function NotificationProvider({ children }) {
         return missionTime > lastChecked.missions;
       });
 
-      if (newMissions.length > 0) {
-        // Filter by location if available
-        const relevantMissions = intervenantLocation
-          ? newMissions.filter(mission => {
-              if (!mission.delivery_lat || !mission.delivery_lng) return true;
-              const distance = calculateDistance(
-                intervenantLocation.latitude,
-                intervenantLocation.longitude,
-                mission.delivery_lat,
-                mission.delivery_lng
-              );
-              return distance <= 10; // Within 10km
-            })
-          : newMissions;
+      if (newMissions.length > 0 && intervenantLocation) {
+        // Score missions by distance and other factors
+        const scoredMissions = newMissions
+          .filter(mission => mission.delivery_lat && mission.delivery_lng)
+          .map(mission => {
+            const distance = calculateDistance(
+              intervenantLocation.latitude,
+              intervenantLocation.longitude,
+              mission.delivery_lat,
+              mission.delivery_lng
+            );
+            // Score: lower distance = higher score, higher fee = higher score
+            const distanceScore = Math.max(0, 10 - distance);
+            const feeScore = (mission.service_fee || 0) / 10;
+            const itemsScore = (mission.shopping_list?.length || 0) / 5;
+            const totalScore = (distanceScore * 0.5) + (feeScore * 0.3) + (itemsScore * 0.2);
 
-        if (relevantMissions.length > 0) {
-          const mission = relevantMissions[0];
-          const distance = intervenantLocation && mission.delivery_lat && mission.delivery_lng
-            ? calculateDistance(
-                intervenantLocation.latitude,
-                intervenantLocation.longitude,
-                mission.delivery_lat,
-                mission.delivery_lng
-              ).toFixed(1)
-            : null;
+            return {
+              ...mission,
+              distance,
+              totalScore
+            };
+          })
+          .sort((a, b) => b.totalScore - a.totalScore)
+          .slice(0, 3); // Top 3 best missions
 
-          // Create persistent notification
-          await base44.entities.Notification.create({
-            user_email: user.email,
-            title: 'Nouvelle mission près de vous !',
-            message: `${mission.store_name} - ${mission.shopping_list?.length || 0} articles (${(mission.service_fee || 0).toFixed(2)}€)${distance ? ` • ${distance} km` : ''}`,
-            type: 'new_mission',
-            mission_id: mission.id,
-            action_url: '/AvailableMissions'
-          });
+        // Notify about best mission
+        if (scoredMissions.length > 0) {
+          const topMission = scoredMissions[0];
 
-          showNotification('Nouvelle mission près de vous !', {
-            body: `${mission.store_name} - ${mission.shopping_list?.length || 0} articles (${(mission.service_fee || 0).toFixed(2)}€)${distance ? ` • ${distance} km` : ''}`,
-            type: 'mission',
-            tag: 'new-mission',
-            onClick: () => {
-              window.location.href = '/app#/AvailableMissions';
-            }
-          });
+          // Only notify if within reasonable distance
+          if (topMission.distance <= 15) {
+            const urgencyLevel = topMission.distance < 2 ? '🔥 TRÈS PROCHE' : topMission.distance < 5 ? '🔔 Proche' : '📍 Disponible';
+
+            await base44.entities.Notification.create({
+              user_email: user.email,
+              title: `${urgencyLevel} - Nouvelle mission !`,
+              message: `${topMission.store_name} • ${topMission.distance.toFixed(1)}km • ${topMission.shopping_list?.length || 0} articles • ${(topMission.service_fee || 0).toFixed(2)}€`,
+              type: 'new_mission',
+              mission_id: topMission.id,
+              action_url: '/AvailableMissions'
+            });
+
+            showNotification(`${urgencyLevel} - Nouvelle mission !`, {
+              body: `${topMission.store_name} • ${topMission.distance.toFixed(1)}km • ${(topMission.service_fee || 0).toFixed(2)}€`,
+              type: 'mission',
+              tag: `smart-mission-${topMission.id}`,
+              onClick: () => {
+                window.location.href = '/app#/AvailableMissions';
+              }
+            });
+          }
         }
 
         setLastChecked(prev => ({
@@ -285,7 +295,7 @@ export default function NotificationProvider({ children }) {
         }));
       }
     } catch (error) {
-      console.error('Error checking for new missions:', error);
+      console.error('Error checking for smart missions:', error);
     }
   };
 
@@ -341,10 +351,10 @@ export default function NotificationProvider({ children }) {
       );
 
       const statusMessages = {
-        'in_progress': { title: 'Mission démarrée', body: 'Votre intervenant a commencé la mission' },
-        'shopping': { title: 'Courses en cours', body: 'Votre intervenant fait vos courses' },
-        'delivering': { title: 'En livraison', body: 'Votre intervenant est en route !' },
-        'completed': { title: 'Mission terminée', body: 'Votre mission a été livrée avec succès' }
+        'in_progress': { title: '🚀 Mission démarrée', body: 'Votre intervenant a commencé la mission', emoji: '🚀' },
+        'shopping': { title: '🛒 Courses en cours', body: 'Votre intervenant fait vos courses', emoji: '🛒' },
+        'delivering': { title: '🚗 En livraison', body: 'Votre intervenant est en route !', emoji: '🚗' },
+        'completed': { title: '✅ Mission terminée', body: 'Votre mission a été livrée avec succès', emoji: '✅' }
       };
 
       for (const mission of myMissions) {
@@ -389,6 +399,160 @@ export default function NotificationProvider({ children }) {
     }
   };
 
+  const checkForMissionStatusChanges = async () => {
+    try {
+      const myMissions = await base44.entities.Mission.filter({
+        intervenant_email: user.email,
+        status: { $in: ['accepted', 'in_progress', 'shopping', 'delivering'] }
+      }, '-updated_date', 15);
+
+      const criticalStatusMessages = {
+        'cancelled': { title: '❌ Mission annulée', body: 'Le client a annulé la mission', severity: 'high' },
+        'pending': { title: '⚠️ Statut changé', body: 'La mission est revenue en attente', severity: 'medium' }
+      };
+
+      for (const mission of myMissions) {
+        if (!mission.id) continue;
+
+        const lastCheckTime = lastChecked[`missionChange_${mission.id}`] || 0;
+        const updateTime = new Date(mission.updated_date).getTime();
+
+        if (updateTime > lastCheckTime && mission.status === 'cancelled') {
+          const statusMsg = criticalStatusMessages['cancelled'];
+
+          await base44.entities.Notification.create({
+            user_email: user.email,
+            title: statusMsg.title,
+            message: `${statusMsg.body} - ${mission.store_name}`,
+            type: 'urgent',
+            mission_id: mission.id,
+            action_url: `/IntervenantMissions`
+          });
+
+          showNotification(statusMsg.title, {
+            body: `${statusMsg.body} - ${mission.store_name}`,
+            type: 'alert',
+            tag: `cancel-${mission.id}`,
+            onClick: () => {
+              window.location.href = `/app#/IntervenantMissions`;
+            }
+          });
+
+          setLastChecked(prev => ({
+            ...prev,
+            [`missionChange_${mission.id}`]: updateTime
+          }));
+        }
+      }
+
+      // Check for client help requests
+      const allMyMissions = await base44.entities.Mission.filter({
+        intervenant_email: user.email
+      }, '-updated_date', 5);
+
+      for (const mission of allMyMissions) {
+        if (!mission.id) continue;
+
+        const lastCheckTime = lastChecked[`helpRequest_${mission.id}`] || 0;
+        const updateTime = new Date(mission.updated_date).getTime();
+
+        // Check if notes contain help keywords
+        if (updateTime > lastCheckTime && mission.notes && 
+            (mission.notes.toLowerCase().includes('aide') || 
+             mission.notes.toLowerCase().includes('urgent') ||
+             mission.notes.toLowerCase().includes('problème'))) {
+
+          await base44.entities.Notification.create({
+            user_email: user.email,
+            title: '🆘 Le client a besoin d\'aide',
+            message: `${mission.client_name} a un message important pour vous`,
+            type: 'urgent',
+            mission_id: mission.id,
+            action_url: `/MissionDetails?id=${mission.id}`
+          });
+
+          showNotification('🆘 Le client a besoin d\'aide', {
+            body: `${mission.client_name} a un message important`,
+            type: 'alert',
+            tag: `help-${mission.id}`,
+            onClick: () => {
+              window.location.href = `/app#/MissionDetails?id=${mission.id}`;
+            }
+          });
+
+          setLastChecked(prev => ({
+            ...prev,
+            [`helpRequest_${mission.id}`]: updateTime
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for mission status changes:', error);
+    }
+  };
+
+  const checkForIntervenantDelay = async () => {
+    try {
+      const activeMissions = await base44.entities.Mission.filter({
+        client_email: user.email,
+        status: { $in: ['delivering', 'in_progress', 'shopping'] }
+      });
+
+      for (const mission of activeMissions) {
+        if (!mission.intervenant_email || !mission.delivery_lat || !mission.delivery_lng) continue;
+
+        const locations = await base44.entities.IntervenantLocation.filter({
+          user_email: mission.intervenant_email
+        }, '-updated_date', 1);
+
+        if (locations.length > 0) {
+          const location = locations[0];
+          const distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            mission.delivery_lat,
+            mission.delivery_lng
+          );
+
+          // Estimate time based on distance and speed
+          const estimatedMinutes = Math.round((distance / 5) * 60) + 10;
+          const missionAge = (Date.now() - new Date(mission.created_date).getTime()) / 60000;
+          const isLate = missionAge > 60 && estimatedMinutes > 20; // Over 1h and still far away
+
+          if (isLate) {
+            const lastDelayNotif = lastChecked[`delay_${mission.id}`] || 0;
+            if (Date.now() - lastDelayNotif > 600000) { // Max once per 10 min
+              await base44.entities.Notification.create({
+                user_email: user.email,
+                title: '⚠️ Votre intervenant est en retard',
+                message: `${mission.intervenant_name} devrait arriver dans ~${estimatedMinutes} minutes`,
+                type: 'urgent',
+                mission_id: mission.id,
+                action_url: `/MissionDetails?id=${mission.id}`
+              });
+
+              showNotification('⚠️ Votre intervenant est en retard', {
+                body: `${mission.intervenant_name} devrait arriver dans ~${estimatedMinutes} minutes`,
+                type: 'alert',
+                tag: `delay-${mission.id}`,
+                onClick: () => {
+                  window.location.href = `/app#/MissionDetails?id=${mission.id}`;
+                }
+              });
+
+              setLastChecked(prev => ({
+                ...prev,
+                [`delay_${mission.id}`]: Date.now()
+              }));
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for delays:', error);
+    }
+  };
+
   const checkIntervenantProximity = async () => {
     try {
       const activeMissions = await base44.entities.Mission.filter({
@@ -418,19 +582,19 @@ export default function NotificationProvider({ children }) {
             if (Date.now() - lastProximityNotif > 300000) { // Max once per 5 min
               await base44.entities.Notification.create({
                 user_email: user.email,
-                title: 'Votre intervenant arrive !',
+                title: '🎉 Votre intervenant arrive !',
                 message: `${mission.intervenant_name} est à moins de 500m de chez vous`,
                 type: 'proximity',
                 mission_id: mission.id,
-                action_url: `/TrackMission?id=${mission.id}`
+                action_url: `/MissionDetails?id=${mission.id}`
               });
 
-              showNotification('Votre intervenant arrive !', {
+              showNotification('🎉 Votre intervenant arrive !', {
                 body: `${mission.intervenant_name} est à moins de 500m`,
                 type: 'alert',
                 tag: `proximity-${mission.id}`,
                 onClick: () => {
-                  window.location.href = `/app#/TrackMission?id=${mission.id}`;
+                  window.location.href = `/app#/MissionDetails?id=${mission.id}`;
                 }
               });
 
