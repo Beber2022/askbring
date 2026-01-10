@@ -29,10 +29,8 @@ export default function AddressAutocomplete({ value, onChange, onSelectAddress, 
         (addr.label && addr.label.toLowerCase().includes(value.toLowerCase()))
       );
       setFilteredAddresses(filtered);
-      setShowSuggestions(filtered.length > 0);
     } else {
       setFilteredAddresses(savedAddresses);
-      setShowSuggestions(false);
     }
   }, [value, savedAddresses]);
 
@@ -75,8 +73,7 @@ export default function AddressAutocomplete({ value, onChange, onSelectAddress, 
   };
 
   const handleInputFocus = () => {
-    if (savedAddresses.length > 0 && !value) {
-      setFilteredAddresses(savedAddresses);
+    if (savedAddresses.length > 0) {
       setShowSuggestions(true);
     }
   };
