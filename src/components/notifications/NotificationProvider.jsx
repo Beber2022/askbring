@@ -47,7 +47,7 @@ export default function NotificationProvider({ children }) {
   useEffect(() => {
     if (!user) return;
 
-    // Check for notifications every 10 seconds
+    // Check for notifications every 5 seconds for more real-time feel
     const interval = setInterval(() => {
       checkForNewMessages();
       if (user.user_type === 'intervenant') {
@@ -58,7 +58,7 @@ export default function NotificationProvider({ children }) {
         checkForMissionStatusUpdates();
         checkIntervenantProximity();
       }
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [user, lastChecked]);
@@ -96,6 +96,15 @@ export default function NotificationProvider({ children }) {
   };
 
   const showNotification = (title, options = {}) => {
+    // Play notification sound
+    if (options.playSound !== false) {
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVKzn77BdGAg+mtzyxHInBSl+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBQ==');
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+      } catch (error) {}
+    }
+
     // Show toast notification
     const icons = {
       message: MessageSquare,
@@ -104,9 +113,9 @@ export default function NotificationProvider({ children }) {
       statusUpdate: Truck,
       alert: AlertCircle
     };
-    
+
     const Icon = icons[options.type] || Bell;
-    
+
     toast({
       title: (
         <div className="flex items-center gap-2">
