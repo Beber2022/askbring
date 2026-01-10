@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import MissionFilters from '@/components/mission/MissionFilters';
+import MissionRouteOptimizer from '@/components/intervenant/MissionRouteOptimizer';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -40,6 +41,7 @@ export default function AvailableMissions() {
   const [filters, setFilters] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedMissions, setSelectedMissions] = useState([]);
   const { toast } = useToast();
 
   const categoryLabels = {
@@ -286,6 +288,13 @@ export default function AvailableMissions() {
         {/* Filters */}
         <MissionFilters onFilterChange={applyFilters} userLocation={location} />
 
+        {/* Route Optimizer for Selected Missions */}
+        {selectedMissions.length > 0 && (
+          <div className="mb-6">
+            <MissionRouteOptimizer missions={selectedMissions} userLocation={location} />
+          </div>
+        )}
+
         {filteredMissions.length === 0 ? (
           <Card className="border-0 shadow-lg">
             <CardContent className="flex flex-col items-center justify-center py-16">
@@ -409,15 +418,27 @@ export default function AvailableMissions() {
 
                           <div className="flex gap-3">
                             <Button
+                              onClick={() => {
+                                setSelectedMissions(prev => 
+                                  prev.find(m => m.id === mission.id)
+                                    ? prev.filter(m => m.id !== mission.id)
+                                    : [...prev, mission]
+                                );
+                              }}
+                              variant={selectedMissions.find(m => m.id === mission.id) ? "default" : "outline"}
+                              className={selectedMissions.find(m => m.id === mission.id) ? "flex-1 bg-emerald-500" : "flex-1"}
+                            >
+                              {selectedMissions.find(m => m.id === mission.id) ? "Sélectionnée ✓" : "Sélectionner"}
+                            </Button>
+                            <Button
                               onClick={() => acceptMission(mission)}
                               className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
                             >
-                              Accepter la mission
+                              Accepter
                             </Button>
                             <Link to={createPageUrl('MissionDetails') + `?id=${mission.id}`}>
-                              <Button variant="outline">
-                                Détails
-                                <ChevronRight className="w-4 h-4 ml-1" />
+                              <Button variant="outline" size="icon">
+                                <ChevronRight className="w-4 h-4" />
                               </Button>
                             </Link>
                           </div>
