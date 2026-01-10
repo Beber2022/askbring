@@ -369,27 +369,33 @@ export default function NewMission() {
                   </div>
 
                   {relevantCards.length > 0 && (
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4" />
-                        Carte de fidélité
-                      </Label>
-                      <Select
-                        value={formData.store_card_id}
-                        onValueChange={(value) => setFormData({ ...formData, store_card_id: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une carte" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={null}>Aucune carte</SelectItem>
-                          {relevantCards.map((card) => (
-                            <SelectItem key={card.id} value={card.id}>
-                              {card.store_name} - ****{card.card_number.slice(-4)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <div className="flex items-start gap-3">
+                        <CreditCard className="w-5 h-5 text-blue-600 mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-medium text-blue-900 mb-1">Carte de fidélité (Information)</h4>
+                          <p className="text-sm text-blue-700 mb-3">
+                            Le Bringeur utilisera sa propre carte de fidélité pour gagner des points. 
+                            Vous pouvez indiquer votre numéro ci-dessous à titre informatif uniquement.
+                          </p>
+                          <Select
+                            value={formData.store_card_id}
+                            onValueChange={(value) => setFormData({ ...formData, store_card_id: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Ma carte (optionnel)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={null}>Ne pas mentionner</SelectItem>
+                              {relevantCards.map((card) => (
+                                <SelectItem key={card.id} value={card.id}>
+                                  {card.store_name} - ****{card.card_number.slice(-4)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
                   )}
 
