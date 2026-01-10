@@ -17,7 +17,8 @@ import {
   FileText,
   Building2,
   Car,
-  Bike
+  Bike,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import NotificationSettings from '@/components/notifications/NotificationSettings';
 
@@ -41,7 +43,12 @@ export default function Profile() {
     user_type: 'client',
     account_type: 'particulier',
     siret_number: '',
-    transport_type: ''
+    transport_type: '',
+    preferred_stores: '',
+    delivery_instructions: '',
+    product_preferences: '',
+    communication_preference: 'app',
+    special_requirements: ''
   });
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -58,7 +65,12 @@ export default function Profile() {
           user_type: userData.user_type || 'client',
           account_type: userData.account_type || 'particulier',
           siret_number: userData.siret_number || '',
-          transport_type: userData.transport_type || ''
+          transport_type: userData.transport_type || '',
+          preferred_stores: userData.preferred_stores || '',
+          delivery_instructions: userData.delivery_instructions || '',
+          product_preferences: userData.product_preferences || '',
+          communication_preference: userData.communication_preference || 'app',
+          special_requirements: userData.special_requirements || ''
         });
       } catch (error) {
         console.error('Error loading user:', error);
@@ -420,6 +432,82 @@ export default function Profile() {
                     <option value="trottinette">🛴 Trottinette</option>
                     <option value="à pied">🚶 À pied</option>
                   </select>
+                </div>
+              </div>
+            )}
+
+            {/* Client Preferences */}
+            {formData.user_type === 'client' && (
+              <div className="space-y-4 p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border-2 border-emerald-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Star className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Préférences de mission</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Ces informations seront automatiquement utilisées lors de vos nouvelles missions et visibles par les Bringeurs.
+                </p>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="preferred_stores">Magasins préférés</Label>
+                    <Input
+                      id="preferred_stores"
+                      value={formData.preferred_stores}
+                      onChange={(e) => setFormData({...formData, preferred_stores: e.target.value})}
+                      placeholder="Ex: Carrefour, Leclerc, Auchan..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Séparez par des virgules</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="delivery_instructions">Instructions de livraison récurrentes</Label>
+                    <Textarea
+                      id="delivery_instructions"
+                      value={formData.delivery_instructions}
+                      onChange={(e) => setFormData({...formData, delivery_instructions: e.target.value})}
+                      placeholder="Ex: Sonner 2 fois, code portail 1234, laisser devant la porte..."
+                      className="h-20"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="product_preferences">Préférences produits</Label>
+                    <Textarea
+                      id="product_preferences"
+                      value={formData.product_preferences}
+                      onChange={(e) => setFormData({...formData, product_preferences: e.target.value})}
+                      placeholder="Ex: Bio si possible, éviter les marques discount, fruits bien mûrs..."
+                      className="h-20"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="communication_preference">Canal de communication préféré</Label>
+                    <Select
+                      value={formData.communication_preference}
+                      onValueChange={(value) => setFormData({...formData, communication_preference: value})}
+                    >
+                      <SelectTrigger id="communication_preference">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="app">💬 Messages dans l'application</SelectItem>
+                        <SelectItem value="sms">📱 SMS</SelectItem>
+                        <SelectItem value="call">📞 Appel téléphonique</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="special_requirements">Exigences spéciales</Label>
+                    <Textarea
+                      id="special_requirements"
+                      value={formData.special_requirements}
+                      onChange={(e) => setFormData({...formData, special_requirements: e.target.value})}
+                      placeholder="Ex: Allergies, restrictions alimentaires, préférences d'emballage..."
+                      className="h-20"
+                    />
+                  </div>
                 </div>
               </div>
             )}
