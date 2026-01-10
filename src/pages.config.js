@@ -18,6 +18,8 @@ import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TourneeDuJour from './pages/TourneeDuJour';
 import TrackMission from './pages/TrackMission';
+import RecurringMissions from './pages/RecurringMissions';
+import CreateRecurringMission from './pages/CreateRecurringMission';
 import __Layout from './Layout.jsx';
 
 
@@ -42,6 +44,8 @@ export const PAGES = {
     "StoreCards": StoreCards,
     "TourneeDuJour": TourneeDuJour,
     "TrackMission": TrackMission,
+    "RecurringMissions": RecurringMissions,
+    "CreateRecurringMission": CreateRecurringMission,
 }
 
 export const pagesConfig = {
