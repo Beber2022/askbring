@@ -89,7 +89,7 @@ export default function MissionMap() {
           },
           (error) => {
             console.error('Geolocation error:', error);
-            setUserLocation({ lat: 48.8566, lng: 2.3522 }); // Default to Paris
+            setUserLocation({ lat: 43.3569, lng: 3.2304 }); // Default to Béziers
           }
         );
       }
