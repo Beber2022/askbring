@@ -44,6 +44,28 @@ export default function Onboarding() {
     }
   });
 
+  useEffect(() => {
+    // Check for pending registration data from Register page
+    const pendingData = sessionStorage.getItem('pending_registration');
+    if (pendingData) {
+      try {
+        const data = JSON.parse(pendingData);
+        setFormData(prev => ({
+          ...prev,
+          user_type: data.user_type || '',
+          phone: data.phone || '',
+          address: data.address || ''
+        }));
+        if (data.user_type) {
+          setStep(2);
+        }
+        sessionStorage.removeItem('pending_registration');
+      } catch (error) {
+        console.error('Error parsing pending registration:', error);
+      }
+    }
+  }, []);
+
   const handleUserTypeSelect = (type) => {
     setFormData({ ...formData, user_type: type });
     setStep(2);
