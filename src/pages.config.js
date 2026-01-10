@@ -25,6 +25,7 @@ import AdminUsers from './pages/AdminUsers';
 import AdminMissions from './pages/AdminMissions';
 import MissionMap from './pages/MissionMap';
 import AdminIntervenants from './pages/AdminIntervenants';
+import Register from './pages/Register';
 import __Layout from './Layout.jsx';
 
 
@@ -56,6 +57,7 @@ export const PAGES = {
     "AdminMissions": AdminMissions,
     "MissionMap": MissionMap,
     "AdminIntervenants": AdminIntervenants,
+    "Register": Register,
 }
 
 export const pagesConfig = {
