@@ -74,17 +74,29 @@ export default function NewMission() {
         setUser(userData);
         setLoyaltyPoints(userData.loyalty_points || 0);
         
-        // Pre-fill with user preferences
+        // Pre-fill from URL params (from AskAI)
+        const params = new URLSearchParams(window.location.search);
+        const aiStore = params.get('store');
+        const aiAddress = params.get('address');
+        const aiTime = params.get('time');
+        const aiCategory = params.get('category');
+        const aiItems = params.get('items');
+        const aiNotes = params.get('notes');
+        
+        // Pre-fill with user preferences or AI data
         const prefNotes = [
           userData.delivery_instructions,
           userData.product_preferences,
           userData.special_requirements
         ].filter(Boolean).join('\n\n');
         
-        setFormData(prev => ({
-          ...prev,
-          delivery_address: userData.address || '',
-          notes: prefNotes,
+        const initialFormData = {
+          store_name: aiStore || '',
+          delivery_address: aiAddress || userData.address || '',
+          scheduled_time: aiTime || '',
+          category: aiCategory || 'courses_alimentaires',
+          notes: aiNotes || prefNotes,
+          shopping_list: aiItems ? JSON.parse(aiItems).map(item => ({ item, quantity: 1, checked: false })) : [],
           client_preferences: {
             preferred_stores: userData.preferred_stores,
             delivery_instructions: userData.delivery_instructions,
@@ -92,7 +104,9 @@ export default function NewMission() {
             communication_preference: userData.communication_preference,
             special_requirements: userData.special_requirements
           }
-        }));
+        };
+        
+        setFormData(prev => ({ ...prev, ...initialFormData }));
 
         const cards = await base44.entities.StoreCard.filter({ user_email: userData.email });
         setStoreCards(cards);

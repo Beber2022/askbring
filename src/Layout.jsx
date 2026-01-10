@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import NotificationProvider from '@/components/notifications/NotificationProvider';
+import AskAI from '@/components/ai/AskAI';
 
 function NotificationBell() {
   const [unreadCount, setUnreadCount] = React.useState(0);
@@ -282,6 +283,9 @@ export default function Layout({ children, currentPageName }) {
       <main className="flex-1">
         {children}
       </main>
+
+      {/* AI Assistant */}
+      {user && <AskAI user={user} />}
 
       {/* Footer */}
       <footer className="bg-white border-t border-emerald-100 mt-auto">
