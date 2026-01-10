@@ -125,21 +125,43 @@ export default function Register() {
 
     setLoading(true);
     try {
-      // Redirect to Base44 registration with user data
-      const redirectUrl = window.location.origin + '/#/Onboarding';
+      // Create account via Base44 authentication
+      const result = await base44.auth.register(formData.email, formData.password);
       
-      // Store user type and data in session storage for after auth
-      sessionStorage.setItem('pending_registration', JSON.stringify({
-        user_type: userType,
-        ...formData
-      }));
+      if (result && result.user) {
+        // Update user profile with additional data
+        await base44.auth.updateMe({
+          full_name: formData.full_name,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          postal_code: formData.postal_code,
+          user_type: userType,
+          // Client specific
+          ...(userType === 'client' && {
+            delivery_instructions: formData.delivery_instructions
+          }),
+          // Intervenant specific
+          ...(userType === 'intervenant' && {
+            vehicle_type: formData.vehicle_type,
+            experience: formData.experience,
+            service_fee_preference: formData.service_fee_preference || null
+          })
+        });
 
-      // Redirect to Base44 auth
-      await base44.auth.redirectToLogin(redirectUrl);
+        toast({
+          title: "Compte créé !",
+          description: "Bienvenue sur AskBring"
+        });
+
+        // Redirect to onboarding
+        navigate(createPageUrl('Onboarding'));
+      }
     } catch (error) {
+      console.error('Registration error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer le compte",
+        description: error.message || "Impossible de créer le compte. Cet email existe peut-être déjà.",
         variant: "destructive"
       });
       setLoading(false);
