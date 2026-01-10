@@ -14,6 +14,7 @@ import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TrackMission from './pages/TrackMission';
 import IntervenantPreferences from './pages/IntervenantPreferences';
+import FindIntervenant from './pages/FindIntervenant';
 import __Layout from './Layout.jsx';
 
 
@@ -34,6 +35,7 @@ export const PAGES = {
     "StoreCards": StoreCards,
     "TrackMission": TrackMission,
     "IntervenantPreferences": IntervenantPreferences,
+    "FindIntervenant": FindIntervenant,
 }
 
 export const pagesConfig = {

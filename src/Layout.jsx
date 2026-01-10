@@ -54,6 +54,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Accueil', page: 'Home', icon: Home },
     { name: 'Nouvelle Mission', page: 'NewMission', icon: ShoppingCart },
     { name: 'Mes Missions', page: 'ClientMissions', icon: Briefcase },
+    { name: 'Carte', page: 'FindIntervenant', icon: MapPin },
     { name: 'Mes Cartes', page: 'StoreCards', icon: CreditCard },
     { name: 'Fidélité', page: 'LoyaltyPoints', icon: Star },
     { name: 'Intervenants', page: 'IntervenantPreferences', icon: User },
