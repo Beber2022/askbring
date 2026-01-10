@@ -28,6 +28,7 @@ import DailySchedule from '@/components/intervenant/DailySchedule';
 import WorkingHoursManager from '@/components/intervenant/WorkingHoursManager';
 import IntervenantMapDashboard from '@/components/intervenant/IntervenantMapDashboard';
 import AdvancedRouteOptimizer from '@/components/intervenant/AdvancedRouteOptimizer';
+import NextMissionETA from '@/components/intervenant/NextMissionETA';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -331,6 +332,13 @@ export default function IntervenantDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Next Mission ETA */}
+        {location && (
+          <div className="mb-8">
+            <NextMissionETA user={user} userLocation={location} />
+          </div>
+        )}
 
         {/* Map Dashboard and Route Optimization */}
         <div className="mb-8 space-y-6">
