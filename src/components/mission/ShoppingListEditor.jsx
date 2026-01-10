@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, ShoppingBag, ImageIcon } from 'lucide-react';
+import { Plus, Trash2, ShoppingBag, ImageIcon, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import ProductSearch from './ProductSearch';
 import ProductRecognition from './ProductRecognition';
 
@@ -12,6 +13,8 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
   const [newItem, setNewItem] = useState('');
   const [newQuantity, setNewQuantity] = useState(1);
   const [itemImages, setItemImages] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageZoom, setImageZoom] = useState(1);
 
   useEffect(() => {
     // Generate images for new items
@@ -137,11 +140,20 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
                   >
                     <div className="flex items-center gap-3 flex-1">
                       {itemImages[index] ? (
-                        <img 
-                          src={itemImages[index]} 
-                          alt={item.item}
-                          className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-                        />
+                        <button
+                          onClick={() => {
+                            setSelectedImage(itemImages[index]);
+                            setImageZoom(1);
+                          }}
+                          className="relative group cursor-zoom-in"
+                        >
+                          <img 
+                            src={itemImages[index]} 
+                            alt={item.item}
+                            className="w-12 h-12 object-cover rounded-lg border border-gray-200 group-hover:border-emerald-400 transition-colors"
+                          />
+                          <ZoomIn className="absolute inset-0 w-4 h-4 m-auto text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
                       ) : (
                         <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
                           <ImageIcon className="w-5 h-5 text-gray-400 animate-pulse" />
@@ -182,6 +194,69 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
           {items.length} article{items.length > 1 ? 's' : ''} • {items.reduce((sum, item) => sum + item.quantity, 0)} unités au total
         </p>
       )}
+
+      {/* Image Zoom Modal */}
+      <Dialog open={!!selectedImage} onOpenChange={(open) => !open && setSelectedImage(null)}>
+        <DialogContent className="max-w-2xl p-0 bg-black border-0">
+          <div className="relative bg-black flex items-center justify-center min-h-96">
+            {/* Close button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+
+            {/* Image with zoom */}
+            <div className="overflow-auto max-h-96 flex items-center justify-center w-full">
+              <img
+                src={selectedImage}
+                alt="Zoomed product"
+                style={{
+                  transform: `scale(${imageZoom})`,
+                  transition: 'transform 0.2s'
+                }}
+                className="cursor-zoom-in"
+                onWheel={(e) => {
+                  e.preventDefault();
+                  const newZoom = Math.min(3, Math.max(1, imageZoom + (e.deltaY > 0 ? -0.1 : 0.1)));
+                  setImageZoom(newZoom);
+                }}
+              />
+            </div>
+
+            {/* Zoom controls */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/50 rounded-lg p-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setImageZoom(Math.max(1, imageZoom - 0.2))}
+                className="text-white hover:bg-white/20"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <span className="text-white text-sm px-2 flex items-center">
+                {Math.round(imageZoom * 100)}%
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setImageZoom(Math.min(3, imageZoom + 0.2))}
+                className="text-white hover:bg-white/20"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Zoom hint */}
+            <p className="absolute top-4 left-4 text-white text-xs opacity-75">
+              Molette pour zoomer
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
