@@ -76,7 +76,16 @@ export default function ClientMissionTracker({ mission, user }) {
   };
 
   const checkForLate = async (currentLocation) => {
-    if (!mission.delivery_lat || !mission.delivery_lng || !mission.scheduled_time) {
+    if (!mission.delivery_lat || !mission.delivery_lng) {
+      // Still calculate ETA even without scheduled time
+      const estimatedMinutes = calculateETA(
+        currentLocation.latitude,
+        currentLocation.longitude,
+        mission.delivery_lat,
+        mission.delivery_lng,
+        currentLocation.speed || 15
+      );
+      setEta(estimatedMinutes);
       return;
     }
 
@@ -113,7 +122,7 @@ export default function ClientMissionTracker({ mission, user }) {
         await base44.entities.Notification.create({
           user_email: mission.client_email,
           title: 'Mission en retard',
-          message: `Votre intervenant sera en retard de ${estimatedMinutes - minutesUntilScheduled} minutes environ`,
+          message: `Votre intervenant sera en retard de ${Math.round(estimatedMinutes - minutesUntilScheduled)} minutes environ`,
           type: 'urgent',
           mission_id: mission.id
         });
@@ -272,6 +281,17 @@ export default function ClientMissionTracker({ mission, user }) {
               <div className="text-xs text-gray-600">km/h</div>
             </div>
           </div>
+
+          {/* ETA Display */}
+          {eta && (
+            <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-lg">
+              <p className="text-xs text-emerald-600 font-medium mb-1">Heure estimée d'arrivée</p>
+              <p className="text-2xl font-bold text-emerald-700">
+                {new Date(Date.now() + eta * 60000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <p className="text-xs text-emerald-600 mt-1">dans {eta} minutes environ</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
