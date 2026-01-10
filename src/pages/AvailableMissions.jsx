@@ -388,8 +388,23 @@ export default function AvailableMissions() {
 
                           {mission.notes && (
                             <p className="text-sm text-gray-500 italic mb-4">
-                              "{mission.notes}"
+                              "{mission.notes.substring(0, 100)}{mission.notes.length > 100 ? '...' : ''}"
                             </p>
+                          )}
+
+                          {mission.client_preferences && (mission.client_preferences.product_preferences || mission.client_preferences.special_requirements) && (
+                            <div className="flex gap-2 mb-4">
+                              {mission.client_preferences.product_preferences && (
+                                <Badge variant="outline" className="text-xs">
+                                  🌟 Préférences produits
+                                </Badge>
+                              )}
+                              {mission.client_preferences.special_requirements && (
+                                <Badge variant="outline" className="text-xs">
+                                  ⚠️ Exigences spéciales
+                                </Badge>
+                              )}
+                            </div>
                           )}
 
                           <div className="flex gap-3">

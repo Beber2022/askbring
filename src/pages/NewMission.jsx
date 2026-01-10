@@ -58,7 +58,8 @@ export default function NewMission() {
     estimated_budget: 0,
     store_card_id: '',
     scheduled_time: '',
-    loyalty_discount: 0
+    loyalty_discount: 0,
+    client_preferences: null
   });
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
@@ -69,9 +70,25 @@ export default function NewMission() {
         const userData = await base44.auth.me();
         setUser(userData);
         setLoyaltyPoints(userData.loyalty_points || 0);
+        
+        // Pre-fill with user preferences
+        const prefNotes = [
+          userData.delivery_instructions,
+          userData.product_preferences,
+          userData.special_requirements
+        ].filter(Boolean).join('\n\n');
+        
         setFormData(prev => ({
           ...prev,
-          delivery_address: userData.address || ''
+          delivery_address: userData.address || '',
+          notes: prefNotes,
+          client_preferences: {
+            preferred_stores: userData.preferred_stores,
+            delivery_instructions: userData.delivery_instructions,
+            product_preferences: userData.product_preferences,
+            communication_preference: userData.communication_preference,
+            special_requirements: userData.special_requirements
+          }
         }));
 
         const cards = await base44.entities.StoreCard.filter({ user_email: userData.email });
@@ -135,6 +152,8 @@ export default function NewMission() {
       const missionData = {
         client_email: user.email,
         client_name: user.full_name,
+        client_phone: user.phone,
+        client_preferences: formData.client_preferences,
         store_name: formData.store_name,
         store_address: formData.store_address,
         category: formData.category,
@@ -400,13 +419,18 @@ export default function NewMission() {
                   )}
 
                   <div className="space-y-2">
-                    <Label>Notes pour l'intervenant</Label>
+                    <Label>Notes pour le Bringeur</Label>
                     <Textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       placeholder="Instructions spéciales, code d'entrée, préférences..."
-                      className="min-h-[80px]"
+                      className="min-h-[100px]"
                     />
+                    {formData.client_preferences && (formData.client_preferences.delivery_instructions || formData.client_preferences.product_preferences) && (
+                      <p className="text-xs text-emerald-600">
+                        ✓ Vos préférences ont été automatiquement ajoutées
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

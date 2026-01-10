@@ -254,11 +254,57 @@ export default function MissionDetails() {
                 {mission.notes && (
                   <div className="mt-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
                     <p className="text-sm font-medium text-yellow-800 mb-1">Notes:</p>
-                    <p className="text-sm text-yellow-700">{mission.notes}</p>
+                    <p className="text-sm text-yellow-700 whitespace-pre-line">{mission.notes}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Client Preferences (for Intervenant) */}
+            {isIntervenant && mission.client_preferences && (
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600" />
+                    Préférences du client
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {mission.client_phone && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-blue-600 font-medium mb-1">Contact préféré</p>
+                      <p className="text-sm text-blue-900 flex items-center gap-2">
+                        {mission.client_preferences.communication_preference === 'call' && '📞 Téléphone'}
+                        {mission.client_preferences.communication_preference === 'sms' && '📱 SMS'}
+                        {mission.client_preferences.communication_preference === 'app' && '💬 Application'}
+                        <span className="font-medium">{mission.client_phone}</span>
+                      </p>
+                    </div>
+                  )}
+                  
+                  {mission.client_preferences.product_preferences && (
+                    <div className="p-3 bg-emerald-50 rounded-lg">
+                      <p className="text-xs text-emerald-600 font-medium mb-1">Préférences produits</p>
+                      <p className="text-sm text-emerald-900">{mission.client_preferences.product_preferences}</p>
+                    </div>
+                  )}
+                  
+                  {mission.client_preferences.special_requirements && (
+                    <div className="p-3 bg-orange-50 rounded-lg">
+                      <p className="text-xs text-orange-600 font-medium mb-1">Exigences spéciales</p>
+                      <p className="text-sm text-orange-900">{mission.client_preferences.special_requirements}</p>
+                    </div>
+                  )}
+                  
+                  {mission.client_preferences.preferred_stores && (
+                    <div className="p-3 bg-purple-50 rounded-lg">
+                      <p className="text-xs text-purple-600 font-medium mb-1">Magasins habituels</p>
+                      <p className="text-sm text-purple-900">{mission.client_preferences.preferred_stores}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}

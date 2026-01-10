@@ -11,13 +11,13 @@ import Messages from './pages/Messages';
 import MissionDetails from './pages/MissionDetails';
 import NewMission from './pages/NewMission';
 import Notifications from './pages/Notifications';
+import Onboarding from './pages/Onboarding';
 import Profile from './pages/Profile';
 import RateClient from './pages/RateClient';
 import RateMission from './pages/RateMission';
 import StoreCards from './pages/StoreCards';
 import TourneeDuJour from './pages/TourneeDuJour';
 import TrackMission from './pages/TrackMission';
-import Onboarding from './pages/Onboarding';
 import __Layout from './Layout.jsx';
 
 
@@ -35,13 +35,13 @@ export const PAGES = {
     "MissionDetails": MissionDetails,
     "NewMission": NewMission,
     "Notifications": Notifications,
+    "Onboarding": Onboarding,
     "Profile": Profile,
     "RateClient": RateClient,
     "RateMission": RateMission,
     "StoreCards": StoreCards,
     "TourneeDuJour": TourneeDuJour,
     "TrackMission": TrackMission,
-    "Onboarding": Onboarding,
 }
 
 export const pagesConfig = {
