@@ -13,9 +13,11 @@ export async function calculateDynamicPricing({
   distance = 0,
   category = 'courses_alimentaires',
   scheduledTime = null,
-  estimatedBudget = 0
+  estimatedBudget = 0,
+  missionType = null,
+  baseFee = null
 }) {
-  // Tarif de base selon la catégorie
+  // Tarif de base selon le type de mission ou la catégorie
   const baseFees = {
     courses_alimentaires: 5,
     livraison_urgente: 10,
@@ -25,7 +27,7 @@ export async function calculateDynamicPricing({
     autre: 7
   };
   
-  let serviceFee = baseFees[category] || 5;
+  let serviceFee = baseFee !== null ? baseFee : (baseFees[category] || 5);
   const breakdown = {
     base: serviceFee,
     timeMultiplier: 1,
