@@ -42,13 +42,18 @@ export default function Layout({ children, currentPageName }) {
         if (authenticated) {
           const userData = await base44.auth.me();
           setUser(userData);
+          
+          // Redirect to onboarding if not completed
+          if (!userData.onboarding_completed && currentPageName !== 'Onboarding') {
+            window.location.href = '/#/Onboarding';
+          }
         }
       } catch (error) {
         console.log('User not authenticated');
       }
     };
     loadUser();
-  }, []);
+  }, [currentPageName]);
 
   const clientNav = [
     { name: 'Accueil', page: 'Home', icon: Home },
