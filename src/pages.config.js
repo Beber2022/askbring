@@ -29,6 +29,7 @@ import TourneeDuJour from './pages/TourneeDuJour';
 import TrackMission from './pages/TrackMission';
 import Invoices from './pages/Invoices';
 import AdminIntervenantMap from './pages/AdminIntervenantMap';
+import MissionHistory from './pages/MissionHistory';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "TrackMission": TrackMission,
     "Invoices": Invoices,
     "AdminIntervenantMap": AdminIntervenantMap,
+    "MissionHistory": MissionHistory,
 }
 
 export const pagesConfig = {

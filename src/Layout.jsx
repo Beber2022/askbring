@@ -103,6 +103,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Suivi Temps Réel', page: 'AdminIntervenantMap', icon: MapPin },
     { name: 'Bringeurs', page: 'AdminIntervenants', icon: Star },
     { name: 'Missions', page: 'AdminMissions', icon: Briefcase },
+    { name: 'Historique', page: 'MissionHistory', icon: Briefcase },
     { name: 'Fidélité', page: 'AdminLoyalty', icon: Star },
     { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
@@ -116,6 +117,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Mes Cartes', page: 'StoreCards', icon: CreditCard },
     { name: 'Fidélité', page: 'LoyaltyPoints', icon: Star },
     { name: 'Factures', page: 'Invoices', icon: Briefcase },
+    { name: 'Historique', page: 'MissionHistory', icon: Briefcase },
     { name: 'Intervenants', page: 'IntervenantPreferences', icon: User },
     { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
@@ -126,6 +128,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Tournée du jour', page: 'TourneeDuJour', icon: MapPin },
     { name: 'Missions Disponibles', page: 'AvailableMissions', icon: ShoppingCart },
     { name: 'Mes Missions', page: 'IntervenantMissions', icon: Briefcase },
+    { name: 'Historique', page: 'MissionHistory', icon: Briefcase },
     { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
 
