@@ -29,6 +29,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import MissionMap from '@/components/mission/MissionMap';
 import ChatBox from '@/components/mission/ChatBox';
+import ClientMissionTracker from '@/components/mission/ClientMissionTracker';
+import GPSTracker from '@/components/intervenant/GPSTracker';
 import { useLiveLocationTracking } from '@/components/mission/LiveLocationTracker';
 import moment from 'moment';
 import 'moment/locale/fr';
@@ -219,24 +221,34 @@ export default function MissionDetails() {
           <Badge className={status.color}>{status.label}</Badge>
         </div>
 
-        {/* Live Map for active missions */}
-        {['in_progress', 'shopping', 'delivering'].includes(mission.status) && mission.intervenant_name && (
-          <Card className="border-0 shadow-lg mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-emerald-600" />
-                  Position en temps réel
-                </h3>
-                <Badge className="bg-green-100 text-green-700">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
-                  Actif
-                </Badge>
-              </div>
-              <MissionMap mission={mission} height="350px" showRoute={true} />
-            </CardContent>
-          </Card>
-        )}
+        {/* Live Map for active missions - Client View */}
+                {['in_progress', 'shopping', 'delivering', 'late'].includes(mission.status) && mission.intervenant_name && isClient && (
+                  <ClientMissionTracker mission={mission} user={user} />
+                )}
+
+                {/* Legacy Map for other cases */}
+                {['in_progress', 'shopping', 'delivering'].includes(mission.status) && mission.intervenant_name && isIntervenant && (
+                  <Card className="border-0 shadow-lg mb-6">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                          <MapPin className="w-5 h-5 text-emerald-600" />
+                          Position en temps réel
+                        </h3>
+                        <Badge className="bg-green-100 text-green-700">
+                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2" />
+                          Actif
+                        </Badge>
+                      </div>
+                      <MissionMap mission={mission} height="350px" showRoute={true} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* GPS Tracker for active missions - Intervenant View (Silent) */}
+                {isIntervenant && ['in_progress', 'shopping', 'delivering'].includes(mission.status) && (
+                  <GPSTracker user={user} mission={mission} />
+                )}
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
