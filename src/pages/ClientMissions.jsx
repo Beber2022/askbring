@@ -14,13 +14,26 @@ import {
   MessageSquare,
   Star,
   Eye,
-  Plus
+  Plus,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import MissionFiltersAdvanced from '@/components/mission/MissionFiltersAdvanced';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -48,7 +61,7 @@ export default function ClientMissions() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [sortBy]);
 
   const loadData = async () => {
     try {
@@ -56,9 +69,10 @@ export default function ClientMissions() {
       setUser(userData);
       const userMissions = await base44.entities.Mission.filter(
         { client_email: userData.email },
-        '-created_date'
+        sortBy
       );
       setMissions(userMissions);
+      setFilteredMissions(userMissions);
     } catch (error) {
       console.error('Error loading missions:', error);
     } finally {
@@ -66,10 +80,75 @@ export default function ClientMissions() {
     }
   };
 
-  const activeMissions = missions.filter(m => 
+  const handleFilterChange = (filters) => {
+    let filtered = [...missions];
+
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(m => m.status === filters.status);
+    }
+
+    if (filters.search) {
+      filtered = filtered.filter(m =>
+        m.store_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        m.delivery_address?.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    if (filters.dateRange !== 'all') {
+      const now = moment();
+      filtered = filtered.filter(m => {
+        const missionDate = moment(m.created_date);
+        if (filters.dateRange === 'today') return missionDate.isSame(now, 'day');
+        if (filters.dateRange === 'week') return missionDate.isSame(now, 'week');
+        if (filters.dateRange === 'month') return missionDate.isSame(now, 'month');
+        return true;
+      });
+    }
+
+    if (filters.minBudget) {
+      filtered = filtered.filter(m => (m.estimated_budget || 0) >= parseFloat(filters.minBudget));
+    }
+    if (filters.maxBudget) {
+      filtered = filtered.filter(m => (m.estimated_budget || 0) <= parseFloat(filters.maxBudget));
+    }
+
+    setFilteredMissions(filtered);
+  };
+
+  const handleCancelMission = async () => {
+    if (!missionToCancel) return;
+
+    try {
+      await base44.entities.Mission.update(missionToCancel.id, {
+        status: 'cancelled'
+      });
+
+      setMissions(missions.map(m => 
+        m.id === missionToCancel.id ? { ...m, status: 'cancelled' } : m
+      ));
+      setFilteredMissions(filteredMissions.map(m => 
+        m.id === missionToCancel.id ? { ...m, status: 'cancelled' } : m
+      ));
+
+      toast({
+        title: "Mission annulée",
+        description: "Votre mission a été annulée avec succès"
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'annuler la mission",
+        variant: "destructive"
+      });
+    } finally {
+      setMissionToCancel(null);
+    }
+  };
+
+  const activeMissions = filteredMissions.filter(m => 
     !['completed', 'cancelled'].includes(m.status)
   );
-  const completedMissions = missions.filter(m => 
+  const completedMissions = filteredMissions.filter(m => 
     ['completed', 'cancelled'].includes(m.status)
   );
 
@@ -144,19 +223,32 @@ export default function ClientMissions() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex items-center justify-between pt-4 border-t flex-wrap gap-3">
                 <div>
                   <p className="text-sm text-gray-500">Total estimé</p>
                   <p className="text-lg font-bold text-emerald-600">
                     {((mission.estimated_budget || 0) + (mission.service_fee || 0)).toFixed(2)}€
                   </p>
                 </div>
-                <Link to={createPageUrl('MissionDetails') + `?id=${mission.id}`}>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Eye className="w-4 h-4" />
-                    Voir détails
-                  </Button>
-                </Link>
+                <div className="flex gap-2">
+                  {mission.status === 'pending' && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setMissionToCancel(mission)}
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Annuler
+                    </Button>
+                  )}
+                  <Link to={createPageUrl('MissionDetails') + `?id=${mission.id}`}>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Eye className="w-4 h-4" />
+                      Détails
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -205,6 +297,11 @@ export default function ClientMissions() {
             </Button>
           </Link>
         </div>
+
+        <MissionFiltersAdvanced 
+          onFilterChange={handleFilterChange}
+          onSortChange={setSortBy}
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-6">
