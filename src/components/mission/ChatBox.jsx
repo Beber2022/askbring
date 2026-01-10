@@ -1,22 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, MessageSquare } from 'lucide-react';
+import { Send, MessageSquare, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import moment from 'moment';
 
 export default function ChatBox({ mission, user }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const lastMessageCount = useRef(0);
 
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 5000);
+    // Poll every 3 seconds for real-time chat experience
+    const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [mission?.id]);
 
@@ -35,6 +39,20 @@ export default function ChatBox({ mission, user }) {
         { mission_id: mission.id },
         'created_date'
       );
+      
+      // Play sound if new message arrived from other person
+      if (missionMessages.length > lastMessageCount.current) {
+        const latestMessage = missionMessages[missionMessages.length - 1];
+        if (latestMessage.sender_email !== user?.email && lastMessageCount.current > 0) {
+          try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVKzn77BdGAg+mtzyxHInBSl+zPLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBSd7yvLaizsIGGS57OihUBELTKXh8bllHAU2jdXzzn0vBQ==');
+            audio.volume = 0.3;
+            audio.play().catch(() => {});
+          } catch (error) {}
+        }
+      }
+      
+      lastMessageCount.current = missionMessages.length;
       setMessages(missionMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -52,6 +70,23 @@ export default function ChatBox({ mission, user }) {
         sender_name: user.full_name,
         content: newMessage.trim()
       });
+      
+      // Create notification for recipient
+      const recipientEmail = user.email === mission.client_email 
+        ? mission.intervenant_email 
+        : mission.client_email;
+      
+      if (recipientEmail) {
+        await base44.entities.Notification.create({
+          user_email: recipientEmail,
+          title: 'Nouveau message',
+          message: `${user.full_name}: ${newMessage.trim().substring(0, 50)}${newMessage.length > 50 ? '...' : ''}`,
+          type: 'message',
+          mission_id: mission.id,
+          action_url: `/Messages?mission=${mission.id}`
+        });
+      }
+      
       setNewMessage('');
       await loadMessages();
     } catch (error) {
@@ -65,9 +100,15 @@ export default function ChatBox({ mission, user }) {
 
   return (
     <div className="flex flex-col h-[400px] bg-gray-50 rounded-xl border border-gray-200">
-      <div className="flex items-center gap-2 p-3 border-b bg-white rounded-t-xl">
-        <MessageSquare className="w-5 h-5 text-emerald-600" />
-        <h3 className="font-semibold text-gray-900">Discussion</h3>
+      <div className="flex items-center justify-between p-3 border-b bg-white rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-emerald-600" />
+          <h3 className="font-semibold text-gray-900">Discussion</h3>
+        </div>
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500 animate-pulse" />
+          En ligne
+        </Badge>
       </div>
 
       <ScrollArea className="flex-1 p-4">
