@@ -16,7 +16,9 @@ import {
   Briefcase,
   Star,
   HelpCircle,
-  Repeat
+  Repeat,
+  LayoutDashboard,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,6 +97,13 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, [currentPageName, hasCheckedOnboarding]);
 
+  const adminNav = [
+    { name: 'Dashboard', page: 'AdminDashboard', icon: LayoutDashboard },
+    { name: 'Utilisateurs', page: 'AdminUsers', icon: Users },
+    { name: 'Missions', page: 'AdminMissions', icon: Briefcase },
+    { name: 'Notifications', page: 'Notifications', icon: Bell },
+  ];
+
   const clientNav = [
     { name: 'Accueil', page: 'Home', icon: Home },
     { name: 'Nouvelle Mission', page: 'NewMission', icon: ShoppingCart },
@@ -115,7 +124,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Notifications', page: 'Notifications', icon: Bell },
   ];
 
-  const navigation = user?.user_type === 'intervenant' ? intervenantNav : clientNav;
+  const navigation = user?.role === 'admin' ? adminNav : (user?.user_type === 'intervenant' ? intervenantNav : clientNav);
 
   const publicPages = ['Home', 'Login'];
   const isPublicPage = publicPages.includes(currentPageName);

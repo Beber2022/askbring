@@ -20,6 +20,9 @@ import TourneeDuJour from './pages/TourneeDuJour';
 import TrackMission from './pages/TrackMission';
 import RecurringMissions from './pages/RecurringMissions';
 import CreateRecurringMission from './pages/CreateRecurringMission';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
+import AdminMissions from './pages/AdminMissions';
 import __Layout from './Layout.jsx';
 
 
@@ -46,6 +49,9 @@ export const PAGES = {
     "TrackMission": TrackMission,
     "RecurringMissions": RecurringMissions,
     "CreateRecurringMission": CreateRecurringMission,
+    "AdminDashboard": AdminDashboard,
+    "AdminUsers": AdminUsers,
+    "AdminMissions": AdminMissions,
 }
 
 export const pagesConfig = {
