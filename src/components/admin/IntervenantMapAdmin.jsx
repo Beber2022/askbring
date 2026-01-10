@@ -82,16 +82,44 @@ export default function IntervenantMapAdmin({ locations, missions }) {
                   position={[location.latitude, location.longitude]}
                   icon={icon}
                 >
-                  <Popup>
-                    <div className="text-sm">
-                      <h4 className="font-semibold mb-1">{location.user_name}</h4>
-                      <Badge className={location.is_available ? 'mb-2 bg-emerald-100 text-emerald-700' : 'mb-2 bg-gray-100 text-gray-700'}>
-                        {location.is_available ? 'Actif' : 'Inactif'}
-                      </Badge>
+                  <Popup className="w-72">
+                    <div className="text-sm space-y-2">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{location.user_name}</h4>
+                        <Badge className={location.is_available ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700'}>
+                          {location.is_available ? 'Actif' : 'Inactif'}
+                        </Badge>
+                      </div>
+                      
                       {assignedMission && (
-                        <div className="text-xs text-gray-600">
-                          <p><strong>Mission:</strong> {assignedMission.store_name}</p>
-                          <p><strong>Client:</strong> {assignedMission.client_name}</p>
+                        <div className="border-t pt-2 space-y-2">
+                          <div className="bg-blue-50 p-2 rounded">
+                            <p className="text-xs font-medium text-blue-700 mb-1">📍 Mission en cours</p>
+                            <p className="font-semibold text-gray-900">{assignedMission.store_name}</p>
+                            <p className="text-xs text-gray-600 mt-1">Client: {assignedMission.client_name}</p>
+                          </div>
+                          
+                          <div className="bg-emerald-50 p-2 rounded">
+                            <p className="text-xs font-medium text-emerald-700 mb-1">🎯 Adresse de livraison</p>
+                            <p className="text-xs text-gray-600">{assignedMission.delivery_address}</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-yellow-50 p-2 rounded">
+                              <p className="text-xs font-medium text-yellow-700">📦 Articles</p>
+                              <p className="text-sm font-bold text-gray-900">{assignedMission.shopping_list?.length || 0}</p>
+                            </div>
+                            <div className="bg-purple-50 p-2 rounded">
+                              <p className="text-xs font-medium text-purple-700">💰 Rémunération</p>
+                              <p className="text-sm font-bold text-gray-900">{(assignedMission.service_fee || 0).toFixed(2)}€</p>
+                            </div>
+                          </div>
+
+                          <Badge className="text-xs">
+                            Statut: {assignedMission.status === 'accepted' ? '✅ Acceptée' : 
+                                    assignedMission.status === 'in_progress' ? '🛒 En courses' :
+                                    assignedMission.status === 'shopping' ? '🛒 Courses' : '🚗 En livraison'}
+                          </Badge>
                         </div>
                       )}
                     </div>
@@ -118,9 +146,10 @@ export default function IntervenantMapAdmin({ locations, missions }) {
                   >
                     <Popup>
                       <div className="text-sm">
-                        <h4 className="font-semibold mb-1">Adresse de livraison</h4>
-                        <p className="text-gray-600">{assignedMission.delivery_address}</p>
-                        <p className="text-xs text-gray-500 mt-1">{assignedMission.store_name}</p>
+                        <h4 className="font-semibold mb-1">🎯 Point de livraison</h4>
+                        <p className="text-gray-600 text-xs">{assignedMission.delivery_address}</p>
+                        <p className="text-xs text-gray-500 mt-2">Magasin: {assignedMission.store_name}</p>
+                        <p className="text-xs text-gray-500">Client: {assignedMission.client_name}</p>
                       </div>
                     </Popup>
                   </Marker>

@@ -403,12 +403,16 @@ export default function NotificationProvider({ children }) {
     try {
       const myMissions = await base44.entities.Mission.filter({
         intervenant_email: user.email,
-        status: { $in: ['accepted', 'in_progress', 'shopping', 'delivering'] }
+        status: { $in: ['accepted', 'in_progress', 'shopping', 'delivering', 'completed'] }
       }, '-updated_date', 15);
 
-      const criticalStatusMessages = {
-        'cancelled': { title: '❌ Mission annulée', body: 'Le client a annulé la mission', severity: 'high' },
-        'pending': { title: '⚠️ Statut changé', body: 'La mission est revenue en attente', severity: 'medium' }
+      const statusMessages = {
+        'accepted': { title: '✅ Mission acceptée', body: 'Vous avez accepté une nouvelle mission', icon: '✅' },
+        'in_progress': { title: '🛒 Courses en cours', body: 'Vous avez démarré vos courses', icon: '🛒' },
+        'shopping': { title: '🛒 Courses en cours', body: 'Vous faites les courses', icon: '🛒' },
+        'delivering': { title: '🚗 En livraison', body: 'Vous êtes en route pour livrer', icon: '🚗' },
+        'completed': { title: '✅ Mission terminée', body: 'Vous avez terminé votre mission avec succès!', icon: '✅' },
+        'cancelled': { title: '❌ Mission annulée', body: 'Le client a annulé la mission', severity: 'high' }
       };
 
       for (const mission of myMissions) {
@@ -417,14 +421,14 @@ export default function NotificationProvider({ children }) {
         const lastCheckTime = lastChecked[`missionChange_${mission.id}`] || 0;
         const updateTime = new Date(mission.updated_date).getTime();
 
-        if (updateTime > lastCheckTime && mission.status === 'cancelled') {
-          const statusMsg = criticalStatusMessages['cancelled'];
+        if (updateTime > lastCheckTime && statusMessages[mission.status]) {
+          const statusMsg = statusMessages[mission.status];
 
           await base44.entities.Notification.create({
             user_email: user.email,
             title: statusMsg.title,
             message: `${statusMsg.body} - ${mission.store_name}`,
-            type: 'urgent',
+            type: mission.status === 'cancelled' ? 'urgent' : 'mission_update',
             mission_id: mission.id,
             action_url: `/IntervenantMissions`
           });
@@ -432,7 +436,7 @@ export default function NotificationProvider({ children }) {
           showNotification(statusMsg.title, {
             body: `${statusMsg.body} - ${mission.store_name}`,
             type: 'alert',
-            tag: `cancel-${mission.id}`,
+            tag: `status-${mission.id}`,
             onClick: () => {
               window.location.href = `/app#/IntervenantMissions`;
             }

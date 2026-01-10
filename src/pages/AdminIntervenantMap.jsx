@@ -11,14 +11,22 @@ import {
   Activity,
   PhoneCall,
   Eye,
-  EyeOff
+  EyeOff,
+  History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 import IntervenantMapAdmin from '@/components/admin/IntervenantMapAdmin';
 import AdminLocationAlerts from '@/components/admin/AdminLocationAlerts';
+import LocationHistoryTracker from '@/components/admin/LocationHistoryTracker';
 
 export default function AdminIntervenantMap() {
   const [locations, setLocations] = useState([]);
@@ -27,6 +35,8 @@ export default function AdminIntervenantMap() {
   const [alerts, setAlerts] = useState([]);
   const [showAlerts, setShowAlerts] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedIntervenant, setSelectedIntervenant] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -315,14 +325,28 @@ export default function AdminIntervenantMap() {
                                 )}
                               </div>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-2"
-                            >
-                              <PhoneCall className="w-4 h-4" />
-                              Contacter
-                            </Button>
+                            <div className="flex gap-2 flex-col sm:flex-row">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedIntervenant({ email: location.user_email, name: location.user_name });
+                                  setShowHistory(true);
+                                }}
+                                className="flex items-center gap-2"
+                              >
+                                <History className="w-4 h-4" />
+                                Historique
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                              >
+                                <PhoneCall className="w-4 h-4" />
+                                Contacter
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -334,6 +358,21 @@ export default function AdminIntervenantMap() {
           </div>
         </motion.div>
       </div>
+
+      {/* Modal Historique */}
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Historique de positions</DialogTitle>
+          </DialogHeader>
+          {selectedIntervenant && (
+            <LocationHistoryTracker 
+              intervenantEmail={selectedIntervenant.email}
+              intervenantName={selectedIntervenant.name}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
