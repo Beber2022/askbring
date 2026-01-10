@@ -13,8 +13,11 @@ import {
   Briefcase,
   CheckCircle,
   ArrowRight,
-  Users
+  Users,
+  Truck,
+  Award
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -267,40 +270,147 @@ export default function Register() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="city">Ville *</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="city"
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      placeholder="Paris"
-                      className="pl-10"
-                      required
-                    />
+                    <Label htmlFor="city">Ville *</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="city"
+                        type="text"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        placeholder="Paris"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="postal_code">Code postal *</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="postal_code"
+                        type="text"
+                        value={formData.postal_code}
+                        onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                        placeholder="75001"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+
+              <div className="space-y-2">
+                   <Label htmlFor="password">Mot de passe *</Label>
+                   <div className="relative">
+                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                     <Input
+                       id="password"
+                       type="password"
+                       value={formData.password}
+                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                       placeholder="Minimum 8 caractères"
+                       className="pl-10"
+                       required
+                     />
+                   </div>
+                 </div>
+
+                 <div className="space-y-2">
+                   <Label htmlFor="password_confirm">Confirmer le mot de passe *</Label>
+                   <div className="relative">
+                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                     <Input
+                       id="password_confirm"
+                       type="password"
+                       value={formData.password_confirm}
+                       onChange={(e) => setFormData({ ...formData, password_confirm: e.target.value })}
+                       placeholder="Confirmez votre mot de passe"
+                       className="pl-10"
+                       required
+                     />
+                   </div>
+                 </div>
 
               {userType === 'client' && (
-                <div className="space-y-2">
-                  <Label htmlFor="address">Adresse de livraison (optionnel)</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="address"
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="10 rue de la République, 75001 Paris"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              )}
+                <>
+                 <div className="space-y-2">
+                   <Label htmlFor="address">Adresse de livraison *</Label>
+                   <div className="relative">
+                     <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                     <Input
+                       id="address"
+                       type="text"
+                       value={formData.address}
+                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                       placeholder="10 rue de la République, 75001 Paris"
+                       className="pl-10"
+                       required
+                     />
+                   </div>
+                 </div>
+
+                 <div className="space-y-2">
+                   <Label htmlFor="delivery_instructions">Instructions de livraison (optionnel)</Label>
+                   <Input
+                     id="delivery_instructions"
+                     type="text"
+                     value={formData.delivery_instructions}
+                     onChange={(e) => setFormData({ ...formData, delivery_instructions: e.target.value })}
+                     placeholder="Code d'entrée, buzzer, instructions spéciales..."
+                   />
+                 </div>
+                </>
+               )}
 
               {userType === 'intervenant' && (
+               <>
+                <div className="space-y-2">
+                  <Label htmlFor="vehicle_type">Type de véhicule *</Label>
+                  <Select value={formData.vehicle_type} onValueChange={(value) => setFormData({ ...formData, vehicle_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisissez un véhicule" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="voiture">Voiture</SelectItem>
+                      <SelectItem value="scooter">Scooter</SelectItem>
+                      <SelectItem value="velo">Vélo</SelectItem>
+                      <SelectItem value="velo_electrique">Vélo électrique</SelectItem>
+                      <SelectItem value="moto">Moto</SelectItem>
+                      <SelectItem value="a_pied">À pied</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="experience">Expérience de service *</Label>
+                  <Select value={formData.experience} onValueChange={(value) => setFormData({ ...formData, experience: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez votre expérience" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="debutant">Débutant (première expérience)</SelectItem>
+                      <SelectItem value="experience">Expérimenté (1-2 ans)</SelectItem>
+                      <SelectItem value="confirme">Confirmé (plus de 2 ans)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="service_fee_preference">Tarif horaire préféré (€/h) (optionnel)</Label>
+                  <Input
+                    id="service_fee_preference"
+                    type="number"
+                    value={formData.service_fee_preference}
+                    onChange={(e) => setFormData({ ...formData, service_fee_preference: e.target.value })}
+                    placeholder="Exemple: 15"
+                    min="0"
+                    step="0.5"
+                  />
+                </div>
+
                 <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
                   <div className="flex items-start gap-3">
                     <Briefcase className="w-5 h-5 text-blue-600 mt-0.5" />
@@ -313,6 +423,7 @@ export default function Register() {
                     </div>
                   </div>
                 </div>
+               </>
               )}
 
               <Button
