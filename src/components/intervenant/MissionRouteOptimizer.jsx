@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { MapPin, Clock, Route, AlertCircle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 
 export default function MissionRouteOptimizer({ missions, userLocation }) {
   const [optimizedRoute, setOptimizedRoute] = useState([]);
@@ -63,7 +62,6 @@ export default function MissionRouteOptimizer({ missions, userLocation }) {
       totalDist += distance;
       totalMin += travelTime + shoppingTime;
 
-      // Check for warnings
       if (distance > 10) {
         newWarnings.push(`Mission ${index + 1}: Distance importante (${distance.toFixed(1)}km)`);
       }
