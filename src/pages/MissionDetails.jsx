@@ -15,7 +15,11 @@ import {
   CheckCircle,
   User,
   ArrowLeft,
-  Wallet
+  Wallet,
+  Heart,
+  Ban,
+  UserPlus,
+  UserMinus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +50,7 @@ export default function MissionDetails() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [storeCard, setStoreCard] = useState(null);
+  const [intervenantPreference, setIntervenantPreference] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,6 +76,17 @@ export default function MissionDetails() {
             setStoreCard(cards[0]);
           }
         }
+        
+        // Load intervenant preference if client
+        if (userData.email === missions[0].client_email && missions[0].intervenant_email) {
+          const prefs = await base44.entities.IntervenantPreference.filter({
+            client_email: userData.email,
+            intervenant_email: missions[0].intervenant_email
+          });
+          if (prefs.length > 0) {
+            setIntervenantPreference(prefs[0]);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading mission:', error);
@@ -89,6 +105,61 @@ export default function MissionDetails() {
     try {
       await base44.entities.Mission.update(mission.id, { shopping_list: updatedList });
       setMission({ ...mission, shopping_list: updatedList });
+    } catch (error) {
+      toast({ title: "Erreur", variant: "destructive" });
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      if (intervenantPreference && intervenantPreference.preference_type === 'favorite') {
+        // Remove from favorites
+        await base44.entities.IntervenantPreference.delete(intervenantPreference.id);
+        setIntervenantPreference(null);
+        toast({ title: "Retiré des favoris" });
+      } else {
+        // Remove existing preference if blocked
+        if (intervenantPreference) {
+          await base44.entities.IntervenantPreference.delete(intervenantPreference.id);
+        }
+        // Add to favorites
+        const newPref = await base44.entities.IntervenantPreference.create({
+          client_email: user.email,
+          intervenant_email: mission.intervenant_email,
+          intervenant_name: mission.intervenant_name,
+          preference_type: 'favorite'
+        });
+        setIntervenantPreference(newPref);
+        toast({ title: "Ajouté aux favoris ❤️" });
+      }
+    } catch (error) {
+      toast({ title: "Erreur", variant: "destructive" });
+    }
+  };
+
+  const toggleBlock = async () => {
+    try {
+      if (intervenantPreference && intervenantPreference.preference_type === 'blocked') {
+        // Unblock
+        await base44.entities.IntervenantPreference.delete(intervenantPreference.id);
+        setIntervenantPreference(null);
+        toast({ title: "Intervenant débloqué" });
+      } else {
+        // Remove existing preference if favorite
+        if (intervenantPreference) {
+          await base44.entities.IntervenantPreference.delete(intervenantPreference.id);
+        }
+        // Block
+        const newPref = await base44.entities.IntervenantPreference.create({
+          client_email: user.email,
+          intervenant_email: mission.intervenant_email,
+          intervenant_name: mission.intervenant_name,
+          preference_type: 'blocked',
+          reason: 'Bloqué depuis les détails de mission'
+        });
+        setIntervenantPreference(newPref);
+        toast({ title: "Intervenant bloqué" });
+      }
     } catch (error) {
       toast({ title: "Erreur", variant: "destructive" });
     }
@@ -260,6 +331,64 @@ export default function MissionDetails() {
               </CardContent>
             </Card>
 
+            {/* Intervenant Review (for Client) */}
+            {isClient && mission.status === 'completed' && mission.client_review && (
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600" />
+                    Avis de l'intervenant
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {(mission.client_rating || mission.client_rating_communication || mission.client_rating_respect || mission.client_rating_clarity) && (
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                      <p className="text-sm font-medium text-blue-900 mb-2">Notes reçues</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {mission.client_rating && (
+                          <div className="text-sm">
+                            <span className="text-blue-600">Global:</span>
+                            <span className="font-medium ml-1">{mission.client_rating}/5 ⭐</span>
+                          </div>
+                        )}
+                        {mission.client_rating_communication && (
+                          <div className="text-sm">
+                            <span className="text-blue-600">Communication:</span>
+                            <span className="font-medium ml-1">{mission.client_rating_communication}/5</span>
+                          </div>
+                        )}
+                        {mission.client_rating_respect && (
+                          <div className="text-sm">
+                            <span className="text-blue-600">Respect:</span>
+                            <span className="font-medium ml-1">{mission.client_rating_respect}/5</span>
+                          </div>
+                        )}
+                        {mission.client_rating_clarity && (
+                          <div className="text-sm">
+                            <span className="text-blue-600">Clarté:</span>
+                            <span className="font-medium ml-1">{mission.client_rating_clarity}/5</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {mission.client_review && (
+                    <div className="p-4 bg-gray-50 rounded-xl">
+                      <p className="text-sm font-medium text-gray-900 mb-1">Commentaire</p>
+                      <p className="text-sm text-gray-700 italic">"{mission.client_review}"</p>
+                    </div>
+                  )}
+                  {mission.client_recommendation !== undefined && (
+                    <div className={`p-3 rounded-lg ${mission.client_recommendation ? 'bg-green-50' : 'bg-orange-50'}`}>
+                      <p className="text-sm font-medium">
+                        {mission.client_recommendation ? '✅ Intervenant recommande ce client' : '⚠️ Intervenant ne recommande pas ce client'}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Client Preferences (for Intervenant) */}
             {isIntervenant && mission.client_preferences && (
               <Card className="border-0 shadow-lg">
@@ -315,8 +444,8 @@ export default function MissionDetails() {
                 <CardHeader>
                   <CardTitle className="text-lg">Votre intervenant</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-3 mb-4">
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-3">
                     <Avatar className="w-12 h-12">
                       <AvatarFallback className="bg-emerald-100 text-emerald-700">
                         {mission.intervenant_name.charAt(0)}
@@ -327,6 +456,30 @@ export default function MissionDetails() {
                       <p className="text-sm text-gray-500">Intervenant</p>
                     </div>
                   </div>
+                  
+                  {mission.status === 'completed' && (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={toggleFavorite}
+                        variant={intervenantPreference?.preference_type === 'favorite' ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Heart className={`w-4 h-4 mr-1 ${intervenantPreference?.preference_type === 'favorite' ? 'fill-current' : ''}`} />
+                        {intervenantPreference?.preference_type === 'favorite' ? 'Favori' : 'Favoris'}
+                      </Button>
+                      <Button
+                        onClick={toggleBlock}
+                        variant={intervenantPreference?.preference_type === 'blocked' ? 'default' : 'outline'}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <Ban className="w-4 h-4 mr-1" />
+                        {intervenantPreference?.preference_type === 'blocked' ? 'Bloqué' : 'Bloquer'}
+                      </Button>
+                    </div>
+                  )}
+                  
                   <Link to={createPageUrl('Messages') + `?mission=${mission.id}`}>
                     <Button className="w-full" variant="outline">
                       <MessageSquare className="w-4 h-4 mr-2" />
