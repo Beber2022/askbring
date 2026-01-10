@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Store,
   FileText,
-  CheckCircle
+  CheckCircle,
+  Tag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ export default function NewMission() {
   const [formData, setFormData] = useState({
     store_name: '',
     store_address: '',
+    category: 'courses_alimentaires',
     shopping_list: [],
     delivery_address: '',
     notes: '',
@@ -135,6 +137,7 @@ export default function NewMission() {
         client_name: user.full_name,
         store_name: formData.store_name,
         store_address: formData.store_address,
+        category: formData.category,
         shopping_list: formData.shopping_list,
         delivery_address: formData.delivery_address,
         notes: formData.notes,
@@ -249,14 +252,39 @@ export default function NewMission() {
                   />
                   
                   {formData.store_name && (
-                    <div className="space-y-2">
-                      <Label>Adresse du magasin (optionnel)</Label>
-                      <Input
-                        value={formData.store_address}
-                        onChange={(e) => setFormData({ ...formData, store_address: e.target.value })}
-                        placeholder="Ex: Carrefour Market, 10 rue de la République"
-                      />
-                    </div>
+                    <>
+                      <div className="space-y-2">
+                        <Label>Adresse du magasin (optionnel)</Label>
+                        <Input
+                          value={formData.store_address}
+                          onChange={(e) => setFormData({ ...formData, store_address: e.target.value })}
+                          placeholder="Ex: Carrefour Market, 10 rue de la République"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Tag className="w-4 h-4" />
+                          Catégorie de mission
+                        </Label>
+                        <Select
+                          value={formData.category}
+                          onValueChange={(value) => setFormData({ ...formData, category: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="courses_alimentaires">🛒 Courses alimentaires</SelectItem>
+                            <SelectItem value="livraison_urgente">⚡ Livraison urgente</SelectItem>
+                            <SelectItem value="taches_menageres">🧹 Tâches ménagères</SelectItem>
+                            <SelectItem value="bricolage">🔧 Bricolage</SelectItem>
+                            <SelectItem value="jardinage">🌱 Jardinage</SelectItem>
+                            <SelectItem value="autre">📦 Autre</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
                   )}
                 </CardContent>
               </Card>

@@ -12,11 +12,15 @@ import {
   Wallet,
   Navigation,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Search,
+  Tag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import MissionFilters from '@/components/mission/MissionFilters';
@@ -34,7 +38,19 @@ export default function AvailableMissions() {
   const [user, setUser] = useState(null);
   const [location, setLocation] = useState(null);
   const [filters, setFilters] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const { toast } = useToast();
+
+  const categoryLabels = {
+    all: 'Toutes catégories',
+    courses_alimentaires: '🛒 Courses alimentaires',
+    livraison_urgente: '⚡ Livraison urgente',
+    taches_menageres: '🧹 Tâches ménagères',
+    bricolage: '🔧 Bricolage',
+    jardinage: '🌱 Jardinage',
+    autre: '📦 Autre'
+  };
 
   useEffect(() => {
     loadData();
@@ -63,7 +79,7 @@ export default function AvailableMissions() {
         '-created_date'
       );
       setMissions(pendingMissions);
-      setFilteredMissions(pendingMissions);
+      filterMissions(pendingMissions, filters, categoryFilter, searchTerm);
     } catch (error) {
       console.error('Error loading missions:', error);
     } finally {
@@ -73,44 +89,66 @@ export default function AvailableMissions() {
 
   const applyFilters = (newFilters) => {
     setFilters(newFilters);
-    
-    let filtered = [...missions];
+    filterMissions(missions, newFilters, categoryFilter, searchTerm);
+  };
 
-    // Filter by location radius
-    if (location && newFilters.searchRadius) {
-      filtered = filtered.filter(mission => {
-        if (!mission.delivery_lat || !mission.delivery_lng) return true;
-        const distance = calculateDistance(
-          location.latitude,
-          location.longitude,
-          mission.delivery_lat,
-          mission.delivery_lng
-        );
-        return distance <= newFilters.searchRadius;
-      });
+  const filterMissions = (missionsList, currentFilters, category, search) => {
+    let filtered = [...missionsList];
+
+    // Filter by category
+    if (category && category !== 'all') {
+      filtered = filtered.filter(mission => mission.category === category);
     }
 
-    // Filter by budget
-    if (newFilters.minBudget || newFilters.maxBudget) {
-      filtered = filtered.filter(mission => {
-        const budget = mission.estimated_budget || 0;
-        return budget >= newFilters.minBudget && budget <= newFilters.maxBudget;
-      });
-    }
-
-    // Filter by store type
-    if (newFilters.storeType && newFilters.storeType !== 'all') {
+    // Filter by search term
+    if (search) {
+      const searchLower = search.toLowerCase();
       filtered = filtered.filter(mission => 
-        mission.store_name?.toLowerCase().includes(newFilters.storeType.toLowerCase())
+        mission.store_name?.toLowerCase().includes(searchLower) ||
+        mission.delivery_address?.toLowerCase().includes(searchLower) ||
+        mission.notes?.toLowerCase().includes(searchLower) ||
+        mission.shopping_list?.some(item => item.item?.toLowerCase().includes(searchLower))
       );
     }
 
-    // Filter by scheduled time
-    if (newFilters.scheduledTime && newFilters.scheduledTime !== 'all') {
-      if (newFilters.scheduledTime === 'asap') {
-        filtered = filtered.filter(mission => !mission.scheduled_time || mission.scheduled_time === null);
-      } else {
-        filtered = filtered.filter(mission => mission.scheduled_time === newFilters.scheduledTime);
+    // Apply existing filters
+    if (currentFilters) {
+      // Filter by location radius
+      if (location && currentFilters.searchRadius) {
+        filtered = filtered.filter(mission => {
+          if (!mission.delivery_lat || !mission.delivery_lng) return true;
+          const distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            mission.delivery_lat,
+            mission.delivery_lng
+          );
+          return distance <= currentFilters.searchRadius;
+        });
+      }
+
+      // Filter by budget
+      if (currentFilters.minBudget || currentFilters.maxBudget) {
+        filtered = filtered.filter(mission => {
+          const budget = mission.estimated_budget || 0;
+          return budget >= currentFilters.minBudget && budget <= currentFilters.maxBudget;
+        });
+      }
+
+      // Filter by store type
+      if (currentFilters.storeType && currentFilters.storeType !== 'all') {
+        filtered = filtered.filter(mission => 
+          mission.store_name?.toLowerCase().includes(currentFilters.storeType.toLowerCase())
+        );
+      }
+
+      // Filter by scheduled time
+      if (currentFilters.scheduledTime && currentFilters.scheduledTime !== 'all') {
+        if (currentFilters.scheduledTime === 'asap') {
+          filtered = filtered.filter(mission => !mission.scheduled_time || mission.scheduled_time === null);
+        } else {
+          filtered = filtered.filter(mission => mission.scheduled_time === currentFilters.scheduledTime);
+        }
       }
     }
 
@@ -197,6 +235,54 @@ export default function AvailableMissions() {
           </Button>
         </div>
 
+        {/* Search and Category Filters */}
+        <Card className="border-0 shadow-lg mb-6">
+          <CardContent className="p-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  Rechercher
+                </label>
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    filterMissions(missions, filters, categoryFilter, e.target.value);
+                  }}
+                  placeholder="Magasin, adresse, article..."
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Catégorie
+                </label>
+                <Select
+                  value={categoryFilter}
+                  onValueChange={(value) => {
+                    setCategoryFilter(value);
+                    filterMissions(missions, filters, value, searchTerm);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(categoryLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Filters */}
         <MissionFilters onFilterChange={applyFilters} userLocation={location} />
 
@@ -242,12 +328,17 @@ export default function AvailableMissions() {
                       <CardContent className="p-0">
                         <div className="p-6">
                           <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-1">
                               <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-xl flex items-center justify-center">
                                 <Store className="w-7 h-7 text-emerald-600" />
                               </div>
                               <div>
-                                <h3 className="font-semibold text-gray-900 text-lg">{mission.store_name}</h3>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold text-gray-900 text-lg">{mission.store_name}</h3>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {categoryLabels[mission.category] || categoryLabels.autre}
+                                  </Badge>
+                                </div>
                                 <p className="text-sm text-gray-500">
                                   Par {mission.client_name}
                                 </p>
