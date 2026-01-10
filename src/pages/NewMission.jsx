@@ -26,6 +26,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import ShoppingListEditor from '@/components/mission/ShoppingListEditor';
 import StoreSelector from '@/components/mission/StoreSelector';
+import StoreAutocomplete from '@/components/mission/StoreAutocomplete';
 import AddressAutocomplete from '@/components/address/AddressAutocomplete';
 import { Star } from 'lucide-react';
 import { calculateDynamicPricing, PricingBreakdown } from '@/components/pricing/DynamicPricing';
@@ -348,10 +349,24 @@ export default function NewMission() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <StoreSelector
-                    selected={formData.store_name}
-                    onSelect={(name) => setFormData({ ...formData, store_name: name })}
-                  />
+                  <div className="space-y-3">
+                    <Label>Rechercher un magasin</Label>
+                    <StoreAutocomplete
+                      value={formData.store_name}
+                      onChange={(name) => setFormData({ ...formData, store_name: name })}
+                      onSelect={(store) => setFormData({ ...formData, store_name: store.name })}
+                    />
+                  </div>
+
+                  {!formData.store_name && (
+                    <div className="pt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-4">Ou choisissez parmi les magasins populaires:</p>
+                      <StoreSelector
+                        selected={formData.store_name}
+                        onSelect={(name) => setFormData({ ...formData, store_name: name })}
+                      />
+                    </div>
+                  )}
                   
                   {formData.store_name && (
                     <>

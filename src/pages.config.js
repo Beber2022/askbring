@@ -1,4 +1,5 @@
 import AdminDashboard from './pages/AdminDashboard';
+import AdminIntervenantMap from './pages/AdminIntervenantMap';
 import AdminIntervenants from './pages/AdminIntervenants';
 import AdminLoyalty from './pages/AdminLoyalty';
 import AdminMissions from './pages/AdminMissions';
@@ -7,14 +8,17 @@ import AvailableMissions from './pages/AvailableMissions';
 import ClientMissions from './pages/ClientMissions';
 import CreateRecurringMission from './pages/CreateRecurringMission';
 import FAQ from './pages/FAQ';
+import FeaturesHub from './pages/FeaturesHub';
 import FindIntervenant from './pages/FindIntervenant';
 import Home from './pages/Home';
 import IntervenantDashboard from './pages/IntervenantDashboard';
 import IntervenantMissions from './pages/IntervenantMissions';
 import IntervenantPreferences from './pages/IntervenantPreferences';
+import Invoices from './pages/Invoices';
 import LoyaltyPoints from './pages/LoyaltyPoints';
 import Messages from './pages/Messages';
 import MissionDetails from './pages/MissionDetails';
+import MissionHistory from './pages/MissionHistory';
 import MissionMap from './pages/MissionMap';
 import NewMission from './pages/NewMission';
 import Notifications from './pages/Notifications';
@@ -27,15 +31,12 @@ import Register from './pages/Register';
 import StoreCards from './pages/StoreCards';
 import TourneeDuJour from './pages/TourneeDuJour';
 import TrackMission from './pages/TrackMission';
-import Invoices from './pages/Invoices';
-import AdminIntervenantMap from './pages/AdminIntervenantMap';
-import MissionHistory from './pages/MissionHistory';
-import FeaturesHub from './pages/FeaturesHub';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AdminDashboard": AdminDashboard,
+    "AdminIntervenantMap": AdminIntervenantMap,
     "AdminIntervenants": AdminIntervenants,
     "AdminLoyalty": AdminLoyalty,
     "AdminMissions": AdminMissions,
@@ -44,14 +45,17 @@ export const PAGES = {
     "ClientMissions": ClientMissions,
     "CreateRecurringMission": CreateRecurringMission,
     "FAQ": FAQ,
+    "FeaturesHub": FeaturesHub,
     "FindIntervenant": FindIntervenant,
     "Home": Home,
     "IntervenantDashboard": IntervenantDashboard,
     "IntervenantMissions": IntervenantMissions,
     "IntervenantPreferences": IntervenantPreferences,
+    "Invoices": Invoices,
     "LoyaltyPoints": LoyaltyPoints,
     "Messages": Messages,
     "MissionDetails": MissionDetails,
+    "MissionHistory": MissionHistory,
     "MissionMap": MissionMap,
     "NewMission": NewMission,
     "Notifications": Notifications,
@@ -64,10 +68,6 @@ export const PAGES = {
     "StoreCards": StoreCards,
     "TourneeDuJour": TourneeDuJour,
     "TrackMission": TrackMission,
-    "Invoices": Invoices,
-    "AdminIntervenantMap": AdminIntervenantMap,
-    "MissionHistory": MissionHistory,
-    "FeaturesHub": FeaturesHub,
 }
 
 export const pagesConfig = {
