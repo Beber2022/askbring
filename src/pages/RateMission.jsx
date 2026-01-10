@@ -83,6 +83,24 @@ export default function RateMission() {
       const totalAmount = (mission.actual_cost || mission.estimated_budget || 0) + (mission.service_fee || 0);
       const pointsEarned = Math.floor(totalAmount) + 10; // 1 point per euro + 10 bonus per mission
       
+      // Check if this is the first completed mission and user was referred
+      let bonusPoints = 0;
+      if (user.referred_by && !user.referral_reward_claimed) {
+        bonusPoints = 100; // Bonus for referrer
+        await base44.auth.updateMe({ referral_reward_claimed: true });
+        
+        // Find and reward the referrer
+        const referrers = await base44.entities.User.filter({ referral_code: user.referred_by });
+        if (referrers.length > 0) {
+          const referrer = referrers[0];
+          await base44.entities.User.update(referrer.id, {
+            loyalty_points: (referrer.loyalty_points || 0) + 100,
+            successful_referrals: (referrer.successful_referrals || 0) + 1,
+            referral_earnings: (referrer.referral_earnings || 0) + 100
+          });
+        }
+      }
+      
       await base44.auth.updateMe({
         loyalty_points: (user.loyalty_points || 0) + pointsEarned,
         total_points_earned: (user.total_points_earned || 0) + pointsEarned,
