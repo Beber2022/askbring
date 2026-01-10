@@ -318,17 +318,23 @@ export default function MissionDetails() {
               </Card>
             )}
 
-            {/* Store Card */}
+            {/* Store Card Info */}
             {storeCard && (
               <Card className="border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <CreditCard className="w-5 h-5" />
-                    Carte fidélité
+                    Info carte client
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl text-white">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl mb-3">
+                    <p className="text-sm text-blue-700 mb-2">
+                      <strong>Note pour le Bringeur:</strong> Utilisez votre propre carte de fidélité pour gagner des points. 
+                      La carte ci-dessous est celle du client (à titre informatif).
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-100 rounded-xl text-gray-700">
                     <p className="text-sm opacity-80">{storeCard.store_name}</p>
                     <p className="font-mono text-lg tracking-wider mt-2">
                       {storeCard.card_number}
@@ -361,8 +367,10 @@ export default function MissionDetails() {
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Frais de service</span>
-                  <span>{(mission.service_fee || 0).toFixed(2)}€</span>
+                  <span className="text-gray-500">Frais de service {isIntervenant ? '(votre rémunération)' : ''}</span>
+                  <span className={isIntervenant ? 'text-emerald-600 font-semibold' : ''}>
+                    {(mission.service_fee || 0).toFixed(2)}€
+                  </span>
                 </div>
                 {mission.tip > 0 && (
                   <div className="flex justify-between text-sm">
