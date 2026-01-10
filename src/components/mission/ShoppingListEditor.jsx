@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import ProductSearch from './ProductSearch';
+import ProductRecognition from './ProductRecognition';
 
 export default function ShoppingListEditor({ items, onChange, storeName }) {
   const [newItem, setNewItem] = useState('');
@@ -50,6 +51,14 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
     onChange(updatedItems);
   };
 
+  const addProductFromPhoto = (product) => {
+    const updatedItems = [
+      ...items,
+      { item: product.item, quantity: product.quantity, checked: false }
+    ];
+    onChange(updatedItems);
+  };
+
   const removeItem = (index) => {
     const updatedItems = items.filter((_, i) => i !== index);
     onChange(updatedItems);
@@ -64,12 +73,20 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
 
   return (
     <div className="space-y-4">
-      {/* Product Search */}
+      {/* Product Search and Recognition */}
       {storeName && (
-        <ProductSearch 
-          storeName={storeName} 
-          onAddProduct={addProductFromSearch}
-        />
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <ProductSearch 
+              storeName={storeName} 
+              onAddProduct={addProductFromSearch}
+            />
+          </div>
+          <ProductRecognition 
+            storeName={storeName}
+            onProductAdd={addProductFromPhoto}
+          />
+        </div>
       )}
 
       {/* Add item form */}
