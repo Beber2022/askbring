@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
+import { InvoiceService } from '@/components/billing/InvoiceService';
 
 export default function RateMission() {
   const navigate = useNavigate();
@@ -169,9 +170,17 @@ export default function RateMission() {
         }
       }
 
+      // Générer et envoyer la facture
+      try {
+        await InvoiceService.createAndSendInvoice(mission, user);
+      } catch (invoiceError) {
+        console.error('Invoice creation error:', invoiceError);
+        // Ne pas bloquer l'utilisateur si la facture échoue
+      }
+
       toast({ 
         title: "Merci pour votre évaluation !",
-        description: `+${pointsEarned} points de fidélité gagnés ! 🎉`
+        description: `+${pointsEarned} points de fidélité gagnés ! 🎉 Une facture a été générée.`
       });
       navigate(createPageUrl('ClientMissions'));
     } catch (error) {
