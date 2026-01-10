@@ -24,6 +24,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
+import DailySchedule from '@/components/intervenant/DailySchedule';
+import WorkingHoursManager from '@/components/intervenant/WorkingHoursManager';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -326,6 +328,18 @@ export default function IntervenantDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Daily Schedule and Route Optimization */}
+        <div className="mb-8">
+          <DailySchedule missions={activeMissions} user={user} />
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          {/* Working Hours Manager */}
+          <div>
+            <WorkingHoursManager user={user} />
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
