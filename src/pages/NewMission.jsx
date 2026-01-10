@@ -25,6 +25,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import ShoppingListEditor from '@/components/mission/ShoppingListEditor';
 import StoreSelector from '@/components/mission/StoreSelector';
+import AddressAutocomplete from '@/components/address/AddressAutocomplete';
 import { Star } from 'lucide-react';
 
 const steps = [
