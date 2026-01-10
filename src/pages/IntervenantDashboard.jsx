@@ -26,6 +26,7 @@ import { Progress } from '@/components/ui/progress';
 import { useNotifications } from '@/components/notifications/NotificationProvider';
 import DailySchedule from '@/components/intervenant/DailySchedule';
 import WorkingHoursManager from '@/components/intervenant/WorkingHoursManager';
+import IntervenantMapDashboard from '@/components/intervenant/IntervenantMapDashboard';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -328,6 +329,11 @@ export default function IntervenantDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Map Dashboard */}
+        <div className="mb-8">
+          <IntervenantMapDashboard user={user} missions={activeMissions} />
         </div>
 
         {/* Daily Schedule and Route Optimization */}
