@@ -32,7 +32,16 @@ export default function Register() {
     email: '',
     phone: '',
     address: '',
-    city: ''
+    city: '',
+    postal_code: '',
+    password: '',
+    password_confirm: '',
+    // Client specific
+    delivery_instructions: '',
+    // Intervenant specific
+    vehicle_type: '',
+    experience: '',
+    service_fee_preference: ''
   });
 
   useEffect(() => {
@@ -61,10 +70,51 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.full_name || !formData.email || !formData.phone) {
+    // Validation communes
+    if (!formData.full_name || !formData.email || !formData.phone || !formData.city || !formData.postal_code || !formData.password) {
       toast({
         title: "Champs requis",
         description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validation email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Email invalide",
+        description: "Veuillez entrer une adresse email valide",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validation password
+    if (formData.password.length < 8) {
+      toast({
+        title: "Mot de passe trop court",
+        description: "Le mot de passe doit contenir au moins 8 caractères",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.password !== formData.password_confirm) {
+      toast({
+        title: "Mots de passe différents",
+        description: "Les deux mots de passe ne correspondent pas",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validation intervenant
+    if (userType === 'intervenant' && (!formData.vehicle_type || !formData.experience)) {
+      toast({
+        title: "Champs requis",
+        description: "Veuillez remplir tous les champs du formulaire Bringeur",
         variant: "destructive"
       });
       return;
