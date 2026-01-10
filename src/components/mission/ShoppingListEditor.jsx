@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
+import ProductSearch from './ProductSearch';
 
 export default function ShoppingListEditor({ items, onChange, storeName }) {
   const [newItem, setNewItem] = useState('');
@@ -37,6 +38,14 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
     setNewQuantity(1);
   };
 
+  const addProductFromSearch = (product) => {
+    const updatedItems = [
+      ...items,
+      { item: product.item, quantity: product.quantity, checked: false }
+    ];
+    onChange(updatedItems);
+  };
+
   const removeItem = (index) => {
     const updatedItems = items.filter((_, i) => i !== index);
     onChange(updatedItems);
@@ -51,13 +60,21 @@ export default function ShoppingListEditor({ items, onChange, storeName }) {
 
   return (
     <div className="space-y-4">
+      {/* Product Search */}
+      {storeName && (
+        <ProductSearch 
+          storeName={storeName} 
+          onAddProduct={addProductFromSearch}
+        />
+      )}
+
       {/* Add item form */}
       <div className="flex gap-2">
         <div className="flex-1">
           <Input
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
-            placeholder="Ajouter un article..."
+            placeholder="Ou ajouter manuellement un article..."
             onKeyPress={(e) => e.key === 'Enter' && addItem()}
             className="h-12"
           />
