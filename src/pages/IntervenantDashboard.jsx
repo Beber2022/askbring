@@ -331,18 +331,14 @@ export default function IntervenantDashboard() {
         </div>
 
         {/* Next Mission ETA */}
-        {location && (
-          <div className="mb-8">
-            <NextMissionETA user={user} userLocation={location} />
-          </div>
-        )}
+        <div className="mb-8">
+          <NextMissionETA user={user} userLocation={location} />
+        </div>
 
         {/* Map Dashboard and Route Optimization */}
         <div className="mb-8 space-y-6">
           <IntervenantMapDashboard user={user} missions={activeMissions} />
-          {activeMissions.length > 1 && location && (
-            <AdvancedRouteOptimizer missions={activeMissions} userLocation={location} />
-          )}
+          <AdvancedRouteOptimizer missions={activeMissions} userLocation={location} />
         </div>
 
         {/* Daily Schedule and Route Optimization */}
