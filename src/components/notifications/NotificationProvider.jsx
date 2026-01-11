@@ -53,6 +53,8 @@ export default function NotificationProvider({ children }) {
       if (user.user_type === 'intervenant') {
         checkForSmartMissionNotifications();
         checkForMissionStatusChanges();
+        checkForUpcomingMissions();
+        checkForMissionDeadlines();
       }
       if (user.user_type === 'client') {
         checkForMissionAcceptance();
@@ -612,6 +614,157 @@ export default function NotificationProvider({ children }) {
       }
     } catch (error) {
       console.error('Error checking proximity:', error);
+    }
+  };
+
+  const checkForUpcomingMissions = async () => {
+    if (!user?.user_type === 'intervenant') return;
+
+    try {
+      const now = Date.now();
+      const thirtyMinFromNow = now + (30 * 60 * 1000);
+      const oneHourFromNow = now + (60 * 60 * 1000);
+
+      const upcomingMissions = await base44.entities.Mission.filter({
+        intervenant_email: user.email,
+        status: { $in: ['accepted', 'in_progress'] }
+      }, '-scheduled_time', 10);
+
+      for (const mission of upcomingMissions) {
+        if (!mission.id || !mission.scheduled_time) continue;
+
+        const scheduledTime = new Date(mission.scheduled_time).getTime();
+        const timeUntilMission = scheduledTime - now;
+
+        // Alert 30 min before scheduled time
+        if (timeUntilMission > 0 && timeUntilMission <= (30 * 60 * 1000)) {
+          const lastAlertTime = lastChecked[`upcoming_30_${mission.id}`] || 0;
+          if (now - lastAlertTime > 1800000) { // Max once per 30min
+            await base44.entities.Notification.create({
+              user_email: user.email,
+              title: '⏰ Mission dans 30 minutes',
+              message: `${mission.store_name} - ${mission.client_name}`,
+              type: 'mission_update',
+              mission_id: mission.id,
+              action_url: `/MissionDetails?id=${mission.id}`
+            });
+
+            showNotification('⏰ Mission dans 30 minutes', {
+              body: `${mission.store_name} - Préparez-vous !`,
+              type: 'alert',
+              tag: `upcoming-30-${mission.id}`,
+              onClick: () => {
+                window.location.href = `/app#/MissionDetails?id=${mission.id}`;
+              }
+            });
+
+            setLastChecked(prev => ({
+              ...prev,
+              [`upcoming_30_${mission.id}`]: now
+            }));
+          }
+        }
+
+        // Alert 1h before for preparation
+        if (timeUntilMission > 0 && timeUntilMission <= (60 * 60 * 1000) && timeUntilMission > (30 * 60 * 1000)) {
+          const lastAlertTime = lastChecked[`upcoming_60_${mission.id}`] || 0;
+          if (now - lastAlertTime > 3600000) { // Max once per hour
+            await base44.entities.Notification.create({
+              user_email: user.email,
+              title: '📋 Prochaine mission dans 1h',
+              message: `${mission.store_name} - ${mission.shopping_list?.length || 0} articles`,
+              type: 'mission_update',
+              mission_id: mission.id,
+              action_url: `/IntervenantDashboard`
+            });
+
+            showNotification('📋 Prochaine mission dans 1h', {
+              body: `${mission.store_name} - ${mission.shopping_list?.length || 0} articles`,
+              type: 'mission',
+              tag: `upcoming-60-${mission.id}`
+            });
+
+            setLastChecked(prev => ({
+              ...prev,
+              [`upcoming_60_${mission.id}`]: now
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking upcoming missions:', error);
+    }
+  };
+
+  const checkForMissionDeadlines = async () => {
+    if (!user?.user_type === 'intervenant') return;
+
+    try {
+      const activeMissions = await base44.entities.Mission.filter({
+        intervenant_email: user.email,
+        status: { $in: ['accepted', 'in_progress', 'shopping'] }
+      }, '-created_date', 10);
+
+      const now = Date.now();
+
+      for (const mission of activeMissions) {
+        if (!mission.id) continue;
+
+        const missionAge = now - new Date(mission.created_date).getTime();
+        const missionAgeHours = missionAge / (60 * 60 * 1000);
+
+        // Alert if mission is taking too long
+        if (missionAgeHours > 2 && mission.status !== 'delivering') {
+          const lastAlertTime = lastChecked[`deadline_${mission.id}`] || 0;
+          if (now - lastAlertTime > 1800000) { // Max once per 30min
+            await base44.entities.Notification.create({
+              user_email: user.email,
+              title: '⚠️ Mission en attente depuis longtemps',
+              message: `${mission.store_name} - ${Math.round(missionAgeHours)}h écoulées`,
+              type: 'urgent',
+              mission_id: mission.id,
+              action_url: `/MissionDetails?id=${mission.id}`
+            });
+
+            showNotification('⚠️ Mission en attente', {
+              body: `${mission.store_name} - ${Math.round(missionAgeHours)}h écoulées`,
+              type: 'alert',
+              tag: `deadline-${mission.id}`,
+              onClick: () => {
+                window.location.href = `/app#/MissionDetails?id=${mission.id}`;
+              }
+            });
+
+            setLastChecked(prev => ({
+              ...prev,
+              [`deadline_${mission.id}`]: now
+            }));
+          }
+        }
+
+        // Encourage to update status if stuck in one phase
+        const statusAge = now - new Date(mission.updated_date).getTime();
+        const statusAgeMinutes = statusAge / (60 * 1000);
+
+        if (statusAgeMinutes > 20 && mission.status === 'in_progress') {
+          const lastAlertTime = lastChecked[`status_stuck_${mission.id}`] || 0;
+          if (now - lastAlertTime > 1200000) { // Max once per 20min
+            showNotification('💡 N\'oubliez pas de mettre à jour', {
+              body: `${mission.store_name} - Marquez "En courses" si vous avez commencé`,
+              type: 'mission',
+              tag: `stuck-${mission.id}`,
+              playSound: false
+            });
+
+            setLastChecked(prev => ({
+              ...prev,
+              [`status_stuck_${mission.id}`]: now
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking mission deadlines:', error);
     }
   };
 
