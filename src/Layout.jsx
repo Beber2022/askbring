@@ -180,7 +180,7 @@ export default function Layout({ children, currentPageName }) {
             </Link>
 
             {/* Desktop Navigation - only show when authenticated */}
-            {isAuthenticated && user && (
+            {isAuthenticated && user ? (
               <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
                 {navigation.map((item) => (
                   <Link
@@ -197,6 +197,8 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 ))}
               </nav>
+            ) : (
+              <div className="flex-1" />
             )}
 
             {/* Right side */}
