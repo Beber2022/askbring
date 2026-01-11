@@ -33,6 +33,9 @@ import { useToast } from '@/components/ui/use-toast';
 import NotificationSettings from '@/components/notifications/NotificationSettings';
 import ReferralSection from '@/components/profile/ReferralSection';
 import AddressAutocomplete from '@/components/address/AddressAutocomplete';
+import SavedAddressesManager from '@/components/profile/SavedAddressesManager';
+import IntervenantPaymentInfo from '@/components/profile/IntervenantPaymentInfo';
+import MissionHistorySummary from '@/components/profile/MissionHistorySummary';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -562,6 +565,19 @@ export default function Profile() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Client-specific sections */}
+        {user?.user_type === 'client' && (
+          <SavedAddressesManager user={user} />
+        )}
+
+        {/* Intervenant-specific sections */}
+        {user?.user_type === 'intervenant' && (
+          <IntervenantPaymentInfo user={user} />
+        )}
+
+        {/* Mission History Summary */}
+        <MissionHistorySummary user={user} />
 
         {/* Referral Section */}
         <ReferralSection user={user} />
