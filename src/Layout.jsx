@@ -179,9 +179,9 @@ export default function Layout({ children, currentPageName }) {
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - only show when authenticated */}
             {isAuthenticated && user && (
-              <nav className="hidden md:flex items-center gap-1">
+              <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
                 {navigation.map((item) => (
                   <Link
                     key={item.page}
