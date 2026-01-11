@@ -183,16 +183,13 @@ export default function IntervenantDashboard() {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      {loading ? (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -482,6 +479,7 @@ export default function IntervenantDashboard() {
           </div>
         </div>
       </motion.div>
+      )}
     </div>
   );
 }
