@@ -53,8 +53,8 @@ export default function IntervenantMovementSimulator() {
   const loadIntervenants = async () => {
     try {
       const users = await base44.entities.User.list();
-      const interventants = users.filter(u => u.user_type === 'intervenant');
-      setIntervenants(interventants);
+      setIntervenants(users);
+      console.log('Loaded users:', users);
     } catch (error) {
       console.error('Error loading intervenants:', error);
     }
