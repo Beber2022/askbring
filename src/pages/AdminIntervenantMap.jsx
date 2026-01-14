@@ -27,6 +27,7 @@ import {
 import IntervenantMapAdmin from '@/components/admin/IntervenantMapAdmin';
 import AdminLocationAlerts from '@/components/admin/AdminLocationAlerts';
 import LocationHistoryTracker from '@/components/admin/LocationHistoryTracker';
+import IntervenantMovementSimulator from '@/components/admin/IntervenantMovementSimulator';
 
 export default function AdminIntervenantMap() {
   const [locations, setLocations] = useState([]);
@@ -242,6 +243,11 @@ export default function AdminIntervenantMap() {
               <AdminLocationAlerts alerts={alerts} />
             </div>
           )}
+
+          {/* Simulator */}
+          <div className="mb-8">
+            <IntervenantMovementSimulator />
+          </div>
 
           {/* Main Map */}
           <div className="mb-8">
