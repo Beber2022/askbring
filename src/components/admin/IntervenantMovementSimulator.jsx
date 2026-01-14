@@ -108,7 +108,7 @@ export default function IntervenantMovementSimulator() {
       // Start interval for position updates
       intervalRef.current = setInterval(() => {
         updatePosition();
-      }, 2000);
+      }, 5000);
 
       toast({
         title: '✅ Simulation démarrée',
@@ -178,7 +178,7 @@ export default function IntervenantMovementSimulator() {
 
     // Calculate new position based on speed and direction
     const speedMs = (currentSpeed * 1000) / 3600; // m/s
-    const distanceKm = (speedMs * 2) / 1000; // distance in 2 seconds in km
+    const distanceKm = (speedMs * 5) / 1000; // distance in 5 seconds in km
 
     // Add some randomness to direction (±15 degrees)
     const randomTurn = (Math.random() - 0.5) * 30;
@@ -219,15 +219,17 @@ export default function IntervenantMovementSimulator() {
         });
       }
 
-      // Also save to history
-      await base44.entities.LocationHistory.create({
-        user_email: intervenant.email,
-        latitude: newPosition.latitude,
-        longitude: newPosition.longitude,
-        accuracy: 10,
-        speed: speedMs,
-        heading: newDirection
-      });
+      // Save to history every 3rd update (every 15 seconds)
+      if (Math.random() > 0.66) {
+        await base44.entities.LocationHistory.create({
+          user_email: intervenant.email,
+          latitude: newPosition.latitude,
+          longitude: newPosition.longitude,
+          accuracy: 10,
+          speed: speedMs,
+          heading: newDirection
+        });
+      }
 
       setCurrentPosition(newPosition);
       setDirection(newDirection);
@@ -358,7 +360,7 @@ export default function IntervenantMovementSimulator() {
         </div>
 
         <p className="text-xs text-gray-500 text-center">
-          La position est mise à jour toutes les 2 secondes
+          La position est mise à jour toutes les 5 secondes
         </p>
       </CardContent>
     </Card>
