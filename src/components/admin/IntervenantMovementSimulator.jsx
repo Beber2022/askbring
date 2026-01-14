@@ -88,32 +88,37 @@ export default function IntervenantMovementSimulator() {
           latitude: 48.8566,
           longitude: 2.3522
         };
+        
+        // Create initial location
         await base44.entities.IntervenantLocation.create({
           user_email: selectedIntervenant.email,
-          user_name: selectedIntervenant.full_name,
+          user_name: selectedIntervenant.full_name || 'Intervenant',
           latitude: initialPos.latitude,
           longitude: initialPos.longitude,
           is_available: true
         });
       }
 
+      // Update state and refs immediately
       setCurrentPosition(initialPos);
+      currentPositionRef.current = initialPos;
+      
       setIsSimulating(true);
 
-      // Update position every 2 seconds
+      // Start interval for position updates
       intervalRef.current = setInterval(() => {
         updatePosition();
       }, 2000);
 
       toast({
         title: '✅ Simulation démarrée',
-        description: `${selectedIntervenant.full_name} se déplace à ${speed} km/h`
+        description: `${selectedIntervenant.full_name || 'Intervenant'} se déplace à ${speed} km/h`
       });
     } catch (error) {
       console.error('Error starting simulation:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de démarrer la simulation',
+        description: error.message || 'Impossible de démarrer la simulation',
         variant: 'destructive'
       });
     }
