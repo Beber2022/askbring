@@ -142,10 +142,10 @@ export default function IntervenantMovementSimulator() {
     }
   };
 
-  const updatePosition = async () => {
-    if (!currentPosition || !selectedIntervenant) return;
+  const updatePosition = () => {
+    setCurrentPosition(prevPos => {
+      if (!prevPos || !selectedIntervenant) return prevPos;
 
-    try {
       // Calculate new position based on speed and direction
       const speedMs = (speed * 1000) / 3600; // m/s
       const distanceKm = (speedMs * 2) / 1000; // distance in 2 seconds in km
@@ -157,8 +157,8 @@ export default function IntervenantMovementSimulator() {
       // Calculate new lat/lng
       const R = 6371; // Earth radius in km
       const bearing = newDirection * (Math.PI / 180);
-      const lat1 = currentPosition.latitude * (Math.PI / 180);
-      const lon1 = currentPosition.longitude * (Math.PI / 180);
+      const lat1 = prevPos.latitude * (Math.PI / 180);
+      const lon1 = prevPos.longitude * (Math.PI / 180);
 
       const lat2 = Math.asin(
         Math.sin(lat1) * Math.cos(distanceKm / R) +
@@ -175,34 +175,38 @@ export default function IntervenantMovementSimulator() {
         longitude: lon2 * (180 / Math.PI)
       };
 
-      // Update in database
-      const locations = await base44.entities.IntervenantLocation.filter({
-        user_email: selectedIntervenant.email
-      });
+      // Update in database (async but non-blocking)
+      (async () => {
+        try {
+          const locations = await base44.entities.IntervenantLocation.filter({
+            user_email: selectedIntervenant.email
+          });
 
-      if (locations.length > 0) {
-        await base44.entities.IntervenantLocation.update(locations[0].id, {
-          latitude: newPosition.latitude,
-          longitude: newPosition.longitude,
-          is_available: true
-        });
+          if (locations.length > 0) {
+            await base44.entities.IntervenantLocation.update(locations[0].id, {
+              latitude: newPosition.latitude,
+              longitude: newPosition.longitude,
+              is_available: true
+            });
 
-        // Also save to history
-        await base44.entities.LocationHistory.create({
-          user_email: selectedIntervenant.email,
-          latitude: newPosition.latitude,
-          longitude: newPosition.longitude,
-          accuracy: 10,
-          speed: speedMs,
-          heading: newDirection
-        });
-      }
+            // Also save to history
+            await base44.entities.LocationHistory.create({
+              user_email: selectedIntervenant.email,
+              latitude: newPosition.latitude,
+              longitude: newPosition.longitude,
+              accuracy: 10,
+              speed: speedMs,
+              heading: newDirection
+            });
+          }
+        } catch (error) {
+          console.error('Error updating position:', error);
+        }
+      })();
 
-      setCurrentPosition(newPosition);
       setDirection(newDirection);
-    } catch (error) {
-      console.error('Error updating position:', error);
-    }
+      return newPosition;
+    });
   };
 
   return (
