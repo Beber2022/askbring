@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import IntervenantMapAdmin from '@/components/admin/IntervenantMapAdmin';
+import AdvancedIntervenantMap from '@/components/admin/AdvancedIntervenantMap';
 import AdminLocationAlerts from '@/components/admin/AdminLocationAlerts';
 import LocationHistoryTracker from '@/components/admin/LocationHistoryTracker';
 import IntervenantMovementSimulator from '@/components/admin/IntervenantMovementSimulator';
@@ -251,7 +251,7 @@ export default function AdminIntervenantMap() {
 
           {/* Main Map */}
           <div className="mb-8">
-            <IntervenantMapAdmin locations={filteredLocations} missions={missions} />
+            <AdvancedIntervenantMap locations={filteredLocations} missions={missions} />
           </div>
 
           {/* Filter and List */}
