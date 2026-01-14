@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import IntervenantMovementSimulator from '@/components/admin/IntervenantMovementSimulator';
 import moment from 'moment';
 import 'moment/locale/fr';
 
@@ -462,6 +463,11 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Simulator */}
+        <div className="mb-8">
+          <IntervenantMovementSimulator />
+        </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Top Performers */}
